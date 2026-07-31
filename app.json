@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "krini_mobile",
-    "slug": "krini_mobile",
+    "name": "Krini Mobil",
+    "slug": "krini-mobil",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -19,6 +19,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sharing",
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Krini utilise la caméra pour scanner les pièces d'identité des clients.",
+          "recordAudioAndroid": false
+        }
+      ]
+    ]
   }
 }

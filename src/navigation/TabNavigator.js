@@ -1,0 +1,156 @@
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, ScrollView } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../context/AuthContext';
+import theme from '../theme';
+
+import DashboardScreen from '../screens/DashboardScreen';
+import VehiclesScreen from '../screens/VehiclesScreen';
+import ClientsScreen from '../screens/ClientsScreen';
+import ContractsScreen from '../screens/ContractsScreen';
+import ReservationsScreen from '../screens/ReservationsScreen';
+import CalendarScreen from '../screens/CalendarScreen';
+import PaymentsScreen from '../screens/PaymentsScreen';
+import ExpensesScreen from '../screens/ExpensesScreen';
+
+const Tab = createBottomTabNavigator();
+
+const ALL_TABS = [
+  { name: 'Dashboard', label: 'Dashboard', icon: 'dashboard', component: DashboardScreen },
+  { name: 'Fleet', label: 'Véhicules', icon: 'directions-car', component: VehiclesScreen },
+  { name: 'Clients', label: 'Clients', icon: 'group', component: ClientsScreen },
+  { name: 'Contracts', label: 'Contrats', icon: 'description', component: ContractsScreen },
+  { name: 'Reservations', label: 'Réservations', icon: 'event-note', component: ReservationsScreen },
+  { name: 'Calendar', label: 'Calendrier', icon: 'calendar-today', component: CalendarScreen },
+  { name: 'Payments', label: 'Paiements', icon: 'payments', component: PaymentsScreen },
+  { name: 'Expenses', label: 'Dépenses', icon: 'receipt-long', component: ExpensesScreen },
+];
+
+function Header({ navigation }) {
+  const { user, logout, isSuperAdmin } = useAuth();
+
+  return (
+    <View style={headerStyles.container}>
+      <View style={headerStyles.left}>
+        <View style={headerStyles.logoBox}>
+          <MaterialIcons name="directions-car" size={18} color="#fff" />
+        </View>
+        <Text style={headerStyles.title}>Krini</Text>
+      </View>
+      <View style={headerStyles.right}>
+        {isSuperAdmin && (
+          <>
+            <TouchableOpacity onPress={() => navigation.navigate('AgencyManagement')} style={headerStyles.link}>
+              <Text style={headerStyles.linkText}>Agences</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('UserManagement')} style={headerStyles.link}>
+              <Text style={headerStyles.linkText}>Users</Text>
+            </TouchableOpacity>
+          </>
+        )}
+        <TouchableOpacity style={headerStyles.iconBtn}>
+          <MaterialIcons name="notifications" size={22} color={theme.colors.onSurfaceVariant} />
+          <View style={headerStyles.badge} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')} style={headerStyles.avatar}>
+          <Text style={headerStyles.avatarText}>
+            {user?.username ? user.username.charAt(0).toUpperCase() : 'K'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={logout} style={headerStyles.logoutBtn}>
+          <MaterialIcons name="logout" size={20} color={theme.colors.error} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function ScrollableTabBar({ state, descriptors, navigation }) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={[tabBarStyles.container, { paddingBottom: insets.bottom + 4 }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={tabBarStyles.scrollContent}>
+        {state.routes.map((route, index) => {
+          const isFocused = state.index === index;
+          const tab = ALL_TABS.find((t) => t.name === route.name);
+          const onPress = () => {
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+          return (
+            <TouchableOpacity key={route.key} onPress={onPress} style={tabBarStyles.tab} activeOpacity={0.7}>
+              <View style={[tabBarStyles.pill, isFocused && tabBarStyles.pillActive]}>
+                <MaterialIcons name={tab?.icon || 'circle'} size={22} color={isFocused ? '#fff' : theme.colors.navInactive} />
+              </View>
+              <Text style={[tabBarStyles.label, isFocused && tabBarStyles.labelActive]} numberOfLines={1}>{tab?.label || route.name}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+export default function TabNavigator({ navigation: stackNavigation }) {
+  return (
+    <Tab.Navigator
+      tabBar={(props) => <ScrollableTabBar {...props} />}
+      screenOptions={{
+        header: () => <Header navigation={stackNavigation} />,
+        headerStyle: { backgroundColor: theme.colors.background },
+        headerShadowVisible: false,
+      }}
+    >
+      {ALL_TABS.map((tab) => (
+        <Tab.Screen key={tab.name} name={tab.name} component={tab.component} />
+      ))}
+    </Tab.Navigator>
+  );
+}
+
+const headerStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: 'rgba(247, 249, 251, 0.9)',
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'ios' ? 54 : 48,
+    paddingBottom: 12,
+    borderBottomWidth: 0,
+  },
+  left: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoBox: { width: 32, height: 32, backgroundColor: theme.colors.primary, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: theme.fonts.headlineBold, fontSize: 20, color: theme.colors.primary, letterSpacing: -0.5 },
+  right: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  link: { marginRight: 4, paddingHorizontal: 6, paddingVertical: 4 },
+  linkText: { fontFamily: theme.fonts.bodySemibold, fontSize: 12, color: theme.colors.primary },
+  iconBtn: { position: 'relative', padding: 4 },
+  badge: { position: 'absolute', top: 3, right: 3, width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.error },
+  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(197, 197, 211, 0.15)' },
+  avatarText: { fontFamily: theme.fonts.bodySemibold, fontSize: 14, color: theme.colors.onSurfaceVariant },
+  logoutBtn: { padding: 4, marginLeft: 4 },
+});
+
+const tabBarStyles = StyleSheet.create({
+  container: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(197, 197, 211, 0.1)',
+    paddingTop: 8,
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.04, shadowRadius: 30 },
+      android: { elevation: 8 },
+    }),
+  },
+  scrollContent: { paddingHorizontal: 8, alignItems: 'center' },
+  tab: { alignItems: 'center', gap: 4, paddingHorizontal: 12, minWidth: 64 },
+  pill: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 999, alignItems: 'center', justifyContent: 'center' },
+  pillActive: { backgroundColor: theme.colors.primary },
+  label: { fontFamily: 'Manrope_700Bold', fontSize: 10, color: theme.colors.navInactive, letterSpacing: -0.2, textAlign: 'center' },
+  labelActive: { color: theme.colors.primary },
+});
