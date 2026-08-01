@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert } from 'react-native';
+import { Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useData } from '../hooks/useData';
 
 const statusColors = {
   Available: theme.colors.statusAvailable,
@@ -24,36 +25,15 @@ const statusLabels = {
 };
 
 export default function VehiclesScreen({ navigation }) {
-  const [vehicles, setVehicles] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const fetchVehicles = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('vehicles/');
-      setVehicles(res.data.results || res.data || []);
-    } catch (e) {
-      console.error('Vehicles error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchVehicles();
-    setRefreshing(false);
-  };
+  const { data, loading, refreshing, refresh } = useData('vehicles/');
+  const vehicles = data?.results || data || [];
 
   const handleDelete = (id) => {
     Alert.alert('Confirmer', 'Supprimer ce véhicule ?', [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Supprimer', style: 'destructive', onPress: async () => {
         await api.delete(`vehicles/${id}/`);
-        fetchVehicles();
+        refresh();
       }},
     ]);
   };
@@ -81,7 +61,7 @@ export default function VehiclesScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <FlatList data={vehicles} keyExtractor={(item) => String(item.id)} renderItem={renderVehicle} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />} ListEmptyComponent={        <Text style={styles.empty}>Aucun véhicule dans la flotte.</Text>} />
+      <FlatList data={vehicles} keyExtractor={(item) => String(item.id)} renderItem={renderVehicle} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />} ListEmptyComponent={        <Text style={styles.empty}>Aucun véhicule dans la flotte.</Text>} />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('VehicleForm', {})}>
         <MaterialIcons name="add" size={28} color={theme.colors.onPrimary} />
       </TouchableOpacity>

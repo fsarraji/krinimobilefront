@@ -1,45 +1,25 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../api';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useData } from '../hooks/useData';
 
 function getInitials(prenom, nom) {
   return ((prenom?.charAt(0) || '') + (nom?.charAt(0) || '')).toUpperCase() || '?';
 }
 
 export default function ClientsScreen({ navigation }) {
-  const [clients, setClients] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const fetchClients = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('clients/');
-      setClients(res.data.results || res.data || []);
-    } catch (e) {
-      console.error('Clients error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchClients(); }, [fetchClients]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchClients();
-    setRefreshing(false);
-  };
+  const { data, loading, refreshing, refresh } = useData('clients/');
+  const clients = data?.results || data || [];
 
   const handleDelete = (id) => {
     Alert.alert('Confirmer', 'Supprimer ce client ?', [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Supprimer', style: 'destructive', onPress: async () => {
         await api.delete(`clients/${id}/`);
-        fetchClients();
+        refresh();
       }},
     ]);
   };
@@ -75,7 +55,7 @@ export default function ClientsScreen({ navigation }) {
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />}
         ListEmptyComponent={<Text style={styles.empty}>Aucun client trouvé dans l'annuaire.</Text>}
       />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ClientForm', {})}>

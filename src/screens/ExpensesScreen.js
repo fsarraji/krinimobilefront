@@ -1,39 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, FlatList, RefreshControl } from 'react-native';
 import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useData } from '../hooks/useData';
 
 const categories = ['Maintenance', 'Fuel', 'Salaires', 'Loyer', 'Utilities', 'Taxes', 'Autre'];
 
 export default function ExpensesScreen() {
-  const [expenses, setExpenses] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data, loading, refreshing, refresh } = useData('expenses/');
+  const expenses = data?.results || data || [];
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ title: '', category: 'Maintenance', amount: '', expense_date: new Date().toISOString().slice(0, 10), notes: '' });
-
-  const fetchExpenses = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('expenses/');
-      setExpenses(res.data.results || res.data || []);
-    } catch (e) {
-      console.error('Expenses error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchExpenses(); }, [fetchExpenses]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchExpenses();
-    setRefreshing(false);
-  };
 
   const handleSave = async () => {
     if (!form.title || !form.amount) {
@@ -45,7 +25,7 @@ export default function ExpensesScreen() {
       await api.post('expenses/', { ...form, amount: parseFloat(form.amount) });
       setShowForm(false);
       setForm({ title: '', category: 'Maintenance', amount: '', expense_date: new Date().toISOString().slice(0, 10), notes: '' });
-      fetchExpenses();
+      refresh();
     } catch (e) {
       Alert.alert('Erreur', e.response?.data?.detail || 'Erreur');
     } finally {
@@ -139,7 +119,7 @@ export default function ExpensesScreen() {
             keyExtractor={(item) => String(item.id)}
             renderItem={renderItem}
             contentContainerStyle={styles.list}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />}
             ListEmptyComponent={        <Text style={styles.empty}>Aucune dépense enregistrée.</Text>}
           />
           <TouchableOpacity style={styles.fab} onPress={() => setShowForm(true)}>

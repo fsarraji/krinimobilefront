@@ -1,37 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import api from '../api';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useData } from '../hooks/useData';
 
 
 export default function DashboardScreen({ navigation }) {
-  const [stats, setStats] = useState(null);
-  const [alerts, setAlerts] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('dashboard/');
-      setStats(res.data.stats || {});
-      setAlerts(res.data.alerts || []);
-    } catch (e) {
-      console.error('Dashboard error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchDashboard();
-    setRefreshing(false);
-  };
+  const { data: dashData, loading, refreshing, refresh } = useData('dashboard/');
+  const stats = dashData?.stats || {};
+  const alerts = dashData?.alerts || [];
 
   const totalVehicles = stats?.total_vehicles || 0;
   const rented = stats?.active_contracts || 0;
@@ -44,7 +21,7 @@ export default function DashboardScreen({ navigation }) {
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         contentContainerStyle={styles.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.sectionHead}>

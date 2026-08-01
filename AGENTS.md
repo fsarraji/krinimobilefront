@@ -11,7 +11,7 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 - `src/api.js` - Axios instance + token management
 - `src/context/AuthContext.js` - Auth state (login, logout, user)
 - `src/navigation/AppNavigator.js` - Main stack navigator
-- `src/navigation/TabNavigator.js` - Bottom tab navigator (8 tabs)
+- `src/navigation/TabNavigator.js` - Bottom tab navigator (5 barre + écran Plus)
 - `src/screens/` - All screen components (16 screens)
 - `src/components/` - Reusable components (FuelGaugeSelector, LoadingSpinner)
 

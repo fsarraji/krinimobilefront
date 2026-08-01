@@ -1,39 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
-import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useData } from '../hooks/useData';
 
 const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const dayLabels = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
 export default function CalendarScreen({ navigation }) {
-  const [contracts, setContracts] = useState([]);
+  const { data, loading, refreshing, refresh } = useData('contracts/');
+  const contracts = data?.results || data || [];
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('contracts/');
-      setContracts(res.data.results || res.data || []);
-    } catch (e) {
-      console.error('Calendar error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
-  };
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -66,7 +45,7 @@ export default function CalendarScreen({ navigation }) {
         <TouchableOpacity onPress={nextMonth} style={styles.navButton}><Text style={styles.navButtonText}>▶</Text></TouchableOpacity>
       </View>
 
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
         <View style={styles.weekDays}>
           {dayLabels.map(d => (
             <View key={d} style={styles.weekDayCell}><Text style={styles.weekDay}>{d}</Text></View>

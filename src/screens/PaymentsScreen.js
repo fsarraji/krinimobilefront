@@ -1,37 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl } from 'react-native';
-import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useData } from '../hooks/useData';
 
 export default function PaymentsScreen() {
-  const [payments, setPayments] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  const fetchPayments = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('payments/');
-      const data = res.data.results || res.data || [];
-      setPayments(data);
-      setTotal(data.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0));
-    } catch (e) {
-      console.error('Payments error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchPayments(); }, [fetchPayments]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchPayments();
-    setRefreshing(false);
-  };
+  const { data, loading, refreshing, refresh } = useData('payments/');
+  const payments = data?.results || data || [];
+  const total = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
@@ -59,7 +35,7 @@ export default function PaymentsScreen() {
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />}
         ListEmptyComponent={<Text style={styles.empty}>Aucun paiement enregistré.</Text>}
       />
     </View>

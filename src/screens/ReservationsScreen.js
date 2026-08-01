@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert, ActivityIndicator } from 'react-native';
 import api from '../api';
 import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { printReservationReceipt } from '../printUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useData } from '../hooks/useData';
 
 export default function ReservationsScreen({ navigation }) {
-  const [reservations, setReservations] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data, loading, refreshing, refresh } = useData('contracts/?statut=RESERVE');
+  const reservations = data?.results || data || [];
   const [activating, setActivating] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [printingId, setPrintingId] = useState(null);
 
   const handlePrint = (id) => {
@@ -18,26 +18,6 @@ export default function ReservationsScreen({ navigation }) {
     printReservationReceipt(id, (status) => {
       if (status === 'READY' || status === 'ERROR') setPrintingId(null);
     });
-  };
-
-  const fetchReservations = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('contracts/?statut=RESERVE');
-      setReservations(res.data.results || res.data || []);
-    } catch (e) {
-      console.error('Reservations error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchReservations(); }, [fetchReservations]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchReservations();
-    setRefreshing(false);
   };
 
   const handleActivate = async (item) => {
@@ -54,7 +34,7 @@ export default function ReservationsScreen({ navigation }) {
               km_sortie: item.km_sortie || 0,
               carburant_sortie: item.carburant_sortie || '4/8',
             });
-            fetchReservations();
+            refresh();
             Alert.alert('Succès', 'Réservation activée');
           } catch (e) {
             Alert.alert('Erreur', e.response?.data?.detail || 'Erreur');
@@ -103,7 +83,7 @@ export default function ReservationsScreen({ navigation }) {
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} tintColor={theme.colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} colors={[theme.colors.primary]} tintColor={theme.colors.primary} />}
         ListEmptyComponent={(
           <Text style={styles.empty}>Aucune réservation en attente.</Text>
         )}

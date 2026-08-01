@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert, ActivityIndicator } from 'react-native';
 import api from '../api';
 import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { printContract } from '../printUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { useData } from '../hooks/useData';
 
 const statusColors = {
   RESERVE: theme.colors.statusReserve,
@@ -28,31 +29,9 @@ const statusLabels = {
 };
 
 export default function ContractsScreen({ navigation }) {
-  const [contracts, setContracts] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, refreshing, refresh } = useData('contracts/');
+  const contracts = data?.results || data || [];
   const [printingId, setPrintingId] = useState(null);
-
-  const fetchContracts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('contracts/');
-      setContracts(res.data.results || res.data || []);
-    } catch (e) {
-      Alert.alert('Erreur', 'Impossible de charger les contrats');
-      console.error('Contracts error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchContracts(); }, [fetchContracts]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchContracts();
-    setRefreshing(false);
-  };
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
@@ -101,7 +80,7 @@ export default function ContractsScreen({ navigation }) {
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />}
         ListEmptyComponent={<Text style={styles.empty}>Aucun contrat enregistré.</Text>}
       />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ContractForm', {})}>
