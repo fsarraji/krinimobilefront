@@ -52,7 +52,7 @@ export default function ClientRegisterScreen({ navigation, route }) {
       if (scans.cin) fd.append('scan_cin', toFile(scans.cin));
       if (scans.permis) fd.append('scan_permis', toFile(scans.permis));
 
-      await api.post('clients/register/', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await api.post('clients/register/', fd);
       const username = (form.email || form.telephone).trim();
       await login(username, form.password);
     } catch (e) {

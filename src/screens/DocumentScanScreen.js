@@ -35,7 +35,14 @@ export default function DocumentScanScreen({ route, navigation }) {
   };
 
   const confirm = () => {
-    navigation.navigate('ClientForm', { scanResult: { docType, uri: photo.uri } });
+    const state = navigation.getState();
+    const routes = state?.routes || [];
+    const previous = routes[routes.length - 2];
+    if (previous) {
+      navigation.navigate(previous.name, { scanResult: { docType, uri: photo.uri } });
+    } else {
+      navigation.goBack();
+    }
   };
 
   if (!permission) {
