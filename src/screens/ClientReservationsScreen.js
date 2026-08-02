@@ -25,13 +25,21 @@ export default function ClientReservationsScreen({ navigation }) {
   const [statut, setStatut] = useState('');
   const { items: reservations, loading, refreshing, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList('reservations/', { search, filters: { statut } });
 
+  const showError = (msg) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      window.alert(msg);
+    } else {
+      Alert.alert('Erreur', msg);
+    }
+  };
+
   const handleCancel = (id) => {
     const doCancel = async () => {
       try {
         await api.patch(`reservations/${id}/`, { statut: 'CANCELLED' });
         refresh();
       } catch (e) {
-        Alert.alert('Erreur', 'Impossible d\'annuler cette réservation.');
+        showError('Impossible d\'annuler cette réservation.');
       }
     };
     if (Platform.OS === 'web') {
@@ -52,7 +60,7 @@ export default function ClientReservationsScreen({ navigation }) {
         await api.delete(`reservations/${id}/`);
         refresh();
       } catch (e) {
-        Alert.alert('Erreur', 'Impossible de supprimer cette réservation.');
+        showError('Impossible de supprimer cette réservation.');
       }
     };
     if (Platform.OS === 'web') {
