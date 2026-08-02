@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import api from '../api';
 import theme from '../theme';
+import DateTimeField from '../components/DateTimeField';
 
 export default function ReservationFormScreen({ navigation }) {
   const [step, setStep] = useState(1);
@@ -27,12 +28,13 @@ export default function ReservationFormScreen({ navigation }) {
       Alert.alert('Erreur', 'Véhicule et client requis');
       return;
     }
+    const toIso = (v) => (v ? new Date(v.replace(' ', 'T')).toISOString() : new Date().toISOString());
     setSaving(true);
     try {
       await api.post('contracts/', {
         vehicle: parseInt(form.vehicle), client: parseInt(form.client),
-        date_sortie: form.date_sortie || new Date().toISOString(),
-        date_retour_prevue: form.date_retour_prevue || new Date().toISOString(),
+        date_sortie: toIso(form.date_sortie),
+        date_retour_prevue: toIso(form.date_retour_prevue),
         prix_par_jour: parseFloat(form.prix_par_jour) || 0,
         caution: parseFloat(form.caution) || settings?.caution_montant || 0,
         km_sortie: parseInt(form.km_sortie) || 0,
@@ -67,10 +69,18 @@ export default function ReservationFormScreen({ navigation }) {
         <>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sélectionner les dates</Text>
-            <Text style={styles.label}>Date de sortie</Text>
-            <TextInput style={styles.input} placeholder="YYYY-MM-DD HH:MM" placeholderTextColor={theme.colors.onSurfaceVariant} value={form.date_sortie} onChangeText={v => setForm(f => ({ ...f, date_sortie: v }))} />
-            <Text style={styles.label}>Date retour prévue</Text>
-            <TextInput style={styles.input} placeholder="YYYY-MM-DD HH:MM" placeholderTextColor={theme.colors.onSurfaceVariant} value={form.date_retour_prevue} onChangeText={v => setForm(f => ({ ...f, date_retour_prevue: v }))} />
+            <DateTimeField
+              label="Date de sortie"
+              value={form.date_sortie}
+              onChange={v => setForm(f => ({ ...f, date_sortie: v }))}
+              minimumDate={new Date()}
+            />
+            <DateTimeField
+              label="Date retour prévue"
+              value={form.date_retour_prevue}
+              onChange={v => setForm(f => ({ ...f, date_retour_prevue: v }))}
+              minimumDate={new Date()}
+            />
           </View>
           <TouchableOpacity style={styles.primaryButton} onPress={() => setStep(2)}>
             <Text style={styles.primaryButtonText}>Suivant</Text>

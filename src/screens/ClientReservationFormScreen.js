@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert,
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../api';
 import theme from '../theme';
+import DateTimeField from '../components/DateTimeField';
 
 const toLocalInput = (date) => {
   const d = new Date(date);
@@ -119,21 +120,17 @@ export default function ClientReservationFormScreen({ navigation, route }) {
 
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>DATES DE LOCATION</Text>
-          <Text style={styles.label}>Date de sortie</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="YYYY-MM-DD HH:MM"
-            placeholderTextColor={theme.colors.onSurfaceVariant}
+          <DateTimeField
+            label="Date de sortie"
             value={dateSortie}
-            onChangeText={setDateSortie}
+            onChange={setDateSortie}
+            minimumDate={new Date()}
           />
-          <Text style={styles.label}>Date de retour prévue</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="YYYY-MM-DD HH:MM"
-            placeholderTextColor={theme.colors.onSurfaceVariant}
+          <DateTimeField
+            label="Date de retour prévue"
             value={dateRetour}
-            onChangeText={setDateRetour}
+            onChange={setDateRetour}
+            minimumDate={parseInput(dateSortie) || new Date()}
           />
           <Text style={styles.label}>Notes (optionnel)</Text>
           <TextInput
