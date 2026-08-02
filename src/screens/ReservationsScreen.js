@@ -37,9 +37,9 @@ export default function ReservationsScreen({ navigation }) {
     confirmDialog(`Confirmer la demande de ${item.client_name} pour le véhicule ${item.vehicle_name} ?`, async () => {
       setUpdating(item.id);
       try {
-        await api.patch(`reservations/${item.id}/`, { statut: 'CONFIRMED' });
+        await api.post(`reservations/${item.id}/confirm/`, { km_sortie: 0, carburant_sortie: '4/8' });
         refresh();
-        Alert.alert('Succès', 'Demande confirmée. Le client voit maintenant sa réservation comme confirmée.');
+        Alert.alert('Succès', 'Demande confirmée. Le contrat de réservation (Réservé) a été créé.');
       } catch (e) {
         Alert.alert('Erreur', e.response?.data?.detail || 'Impossible de confirmer cette demande.');
       } finally {
