@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform, Dimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../api';
 import theme from '../theme';
 import { useAuth } from '../context/AuthContext';
@@ -25,6 +26,8 @@ export default function ContractFormScreen({ navigation }) {
   });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -108,6 +111,29 @@ export default function ContractFormScreen({ navigation }) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const d = new Date(date);
     return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  };
+
+  const onStartDateChange = (event, selected) => {
+    if (Platform.OS === 'android') setShowStartPicker(false);
+    if (event.type !== 'set' || !selected) return;
+    setStartDate(selected);
+    if (selected > endDate) {
+      const next = new Date(selected);
+      next.setDate(next.getDate() + 1);
+      setEndDate(next);
+    }
+  };
+
+  const onEndDateChange = (event, selected) => {
+    if (Platform.OS === 'android') setShowEndPicker(false);
+    if (event.type !== 'set' || !selected) return;
+    if (selected <= startDate) {
+      const next = new Date(startDate);
+      next.setDate(next.getDate() + 1);
+      setEndDate(next);
+    } else {
+      setEndDate(selected);
+    }
   };
 
   if (loading) {
@@ -230,21 +256,53 @@ export default function ContractFormScreen({ navigation }) {
             </View>
           </View>
           <View style={styles.dateRow}>
-            <View style={styles.dateCard}>
+            <TouchableOpacity style={styles.dateCard} onPress={() => setShowStartPicker(true)} activeOpacity={0.7}>
               <View style={styles.dateIconCircle}>
                 <MaterialIcons name="calendar-today" size={20} color={theme.colors.primary} />
               </View>
               <Text style={styles.dateLabel}>Date de début</Text>
               <Text style={styles.dateValue}>{formatDate(startDate)}</Text>
-            </View>
-            <View style={styles.dateCard}>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.dateCard} onPress={() => setShowEndPicker(true)} activeOpacity={0.7}>
               <View style={styles.dateIconCircle}>
                 <MaterialIcons name="event-available" size={20} color={theme.colors.primary} />
               </View>
               <Text style={styles.dateLabel}>Date de fin</Text>
               <Text style={styles.dateValue}>{formatDate(endDate)}</Text>
-            </View>
+            </TouchableOpacity>
           </View>
+          {showStartPicker && (
+            <View>
+              <DateTimePicker
+                value={startDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                minimumDate={new Date()}
+                onChange={onStartDateChange}
+              />
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity onPress={() => setShowStartPicker(false)} style={styles.dateDone}>
+                  <Text style={styles.dateDoneText}>OK</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+          {showEndPicker && (
+            <View>
+              <DateTimePicker
+                value={endDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                minimumDate={startDate}
+                onChange={onEndDateChange}
+              />
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity onPress={() => setShowEndPicker(false)} style={styles.dateDone}>
+                  <Text style={styles.dateDoneText}>OK</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
           <View style={styles.infoBanner}>
             <MaterialIcons name="info" size={18} color={theme.colors.primary} style={styles.infoBannerIcon} />
             <Text style={styles.infoBannerText}>
@@ -547,6 +605,16 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.bodySemibold,
     color: theme.colors.onSurface,
     textAlign: 'center',
+  },
+  dateDone: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+  },
+  dateDoneText: {
+    fontSize: theme.fontSize.md,
+    fontFamily: theme.fonts.bodySemibold,
+    color: theme.colors.primary,
   },
   infoBanner: {
     flexDirection: 'row',

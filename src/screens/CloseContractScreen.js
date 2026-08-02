@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert,
 import api from '../api';
 import theme from '../theme';
 import FuelGaugeSelector from '../components/FuelGaugeSelector';
+import DateField from '../components/DateField';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const accessories = [
@@ -96,8 +97,12 @@ export default function CloseContractScreen({ route, navigation }) {
           <Text style={styles.cardTitle}>Retour du véhicule</Text>
         </View>
 
-        <Text style={styles.label}>Date de retour effective</Text>
-        <TextInput style={styles.input} value={form.date_retour_effective} onChangeText={v => setForm(f => ({ ...f, date_retour_effective: v }))} />
+          <DateField
+            label="Date de retour effective"
+            value={form.date_retour_effective}
+            onChange={v => setForm(f => ({ ...f, date_retour_effective: v }))}
+            maximumDate={new Date()}
+          />
 
         <Text style={styles.label}>Kilométrage de retour *</Text>
         <TextInput style={styles.input} value={form.km_retour} onChangeText={v => setForm(f => ({ ...f, km_retour: v }))} keyboardType="numeric" placeholder="km" placeholderTextColor={theme.colors.onSurfaceVariant} />

@@ -6,6 +6,7 @@ import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
 import SearchBar from '../components/SearchBar';
 import PaginationFooter from '../components/PaginationFooter';
+import DateField from '../components/DateField';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 
 const categories = ['Maintenance', 'Fuel', 'Salaires', 'Loyer', 'Utilities', 'Taxes', 'Autre'];
@@ -86,13 +87,11 @@ export default function ExpensesScreen() {
             keyboardType="numeric"
           />
 
-          <Text style={styles.inputLabel}>Date</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={theme.colors.onSurfaceVariant}
+          <DateField
+            label="Date"
             value={form.expense_date}
-            onChangeText={v => setForm(f => ({ ...f, expense_date: v }))}
+            onChange={v => setForm(f => ({ ...f, expense_date: v }))}
+            maximumDate={new Date()}
           />
 
           <Text style={styles.inputLabel}>Notes</Text>

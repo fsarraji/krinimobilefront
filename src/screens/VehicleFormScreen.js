@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert,
 import api from '../api';
 import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
+import DateField from '../components/DateField';
 
 export default function VehicleFormScreen({ route, navigation }) {
   const vehicleId = route.params?.id;
@@ -145,6 +146,9 @@ export default function VehicleFormScreen({ route, navigation }) {
             <TouchableChoice key={s} label={{Available: 'Disponible', Rented: 'Loué', Maintenance: 'Maintenance'}[s]} selected={form.statut === s} onPress={() => setForm(f => ({ ...f, statut: s }))} />
           ))}
         </View>
+
+        <DateField label="Date d'assurance" value={form.date_assurance} onChange={v => setForm(f => ({ ...f, date_assurance: v }))} />
+        <DateField label="Date de visite technique" value={form.date_visite_technique} onChange={v => setForm(f => ({ ...f, date_visite_technique: v }))} />
 
         <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
           {saving ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Text style={styles.saveText}>{isEdit ? 'Mettre à jour' : 'Enregistrer le Véhicule'}</Text>}
