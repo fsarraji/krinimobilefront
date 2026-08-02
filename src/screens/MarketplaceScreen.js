@@ -15,7 +15,7 @@ const formatDate = (date) => {
   return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
 };
 
-export default function MarketplaceScreen() {
+export default function MarketplaceScreen({ navigation }) {
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -80,7 +80,7 @@ export default function MarketplaceScreen() {
           </View>
         </View>
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.bookButton} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.bookButton} activeOpacity={0.8} onPress={() => navigation.navigate('BookingForm', { vehicle: item })}>
             <Text style={styles.bookButtonText}>Book Now</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.favoriteButton} activeOpacity={0.7}>

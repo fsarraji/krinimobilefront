@@ -15,6 +15,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import AgencyManagementScreen from '../screens/AgencyManagementScreen';
 import UserManagementScreen from '../screens/UserManagementScreen';
 import MarketplaceScreen from '../screens/MarketplaceScreen';
+import BookingFormScreen from '../screens/BookingFormScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -49,6 +50,7 @@ export default function AppNavigator() {
             <Stack.Screen name="AgencyManagement" component={AgencyManagementScreen} options={{ title: 'Agences' }} />
             <Stack.Screen name="UserManagement" component={UserManagementScreen} options={{ title: 'Utilisateurs' }} />
             <Stack.Screen name="Marketplace" component={MarketplaceScreen} options={{ title: 'Marché' }} />
+            <Stack.Screen name="BookingForm" component={BookingFormScreen} options={{ title: 'Réserver une voiture' }} />
           </>
         )}
       </Stack.Navigator>
