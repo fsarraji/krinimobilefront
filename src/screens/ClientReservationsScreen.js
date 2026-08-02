@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert, RefreshControl, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
 import api from '../api';
 import theme from '../theme';
+import SearchBar from '../components/SearchBar';
+import PaginationFooter from '../components/PaginationFooter';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 const STATUS_META = {
   PENDING: { label: 'En attente', color: theme.colors.warning, icon: 'hourglass-top' },
@@ -11,35 +13,36 @@ const STATUS_META = {
   CANCELLED: { label: 'Annulée', color: theme.colors.error, icon: 'cancel' },
 };
 
+const STATUS_OPTIONS = [
+  { value: '', label: 'Toutes' },
+  { value: 'PENDING', label: 'En attente' },
+  { value: 'CONFIRMED', label: 'Confirmées' },
+  { value: 'CANCELLED', label: 'Annulées' },
+];
+
 export default function ClientReservationsScreen({ navigation }) {
-  const [reservations, setReservations] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(() => {
-    setLoading(true);
-    api.get('reservations/')
-      .then((r) => setReservations(r.data.results || r.data || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  const [search, setSearch] = useState('');
+  const [statut, setStatut] = useState('');
+  const { items: reservations, loading, refreshing, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList('reservations/', { search, filters: { statut } });
 
   const handleCancel = (id) => {
+    const doCancel = async () => {
+      try {
+        await api.patch(`reservations/${id}/`, { statut: 'CANCELLED' });
+        refresh();
+      } catch (e) {
+        Alert.alert('Erreur', 'Impossible d\'annuler cette réservation.');
+      }
+    };
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm('Voulez-vous vraiment annuler cette réservation ?')) {
+        doCancel();
+      }
+      return;
+    }
     Alert.alert('Annuler la réservation', 'Voulez-vous vraiment annuler cette réservation ?', [
       { text: 'Non', style: 'cancel' },
-      {
-        text: 'Oui, annuler',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await api.patch(`reservations/${id}/`, { statut: 'CANCELLED' });
-            load();
-          } catch (e) {
-            Alert.alert('Erreur', 'Impossible d\'annuler cette réservation.');
-          }
-        },
-      },
+      { text: 'Oui, annuler', style: 'destructive', onPress: doCancel },
     ]);
   };
 
@@ -53,6 +56,10 @@ export default function ClientReservationsScreen({ navigation }) {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.vehicleName} numberOfLines={1}>{item.vehicle_name}</Text>
+            <View style={styles.agencyRow}>
+              <MaterialIcons name="business" size={12} color={theme.colors.onSurfaceVariant} />
+              <Text style={styles.agencyName} numberOfLines={1}>{item.agency_name || ''}</Text>
+            </View>
             <Text style={styles.vehicleMeta}>{item.formatted_dates?.range || 'Dates à définir'}</Text>
           </View>
         </View>
@@ -90,11 +97,27 @@ export default function ClientReservationsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (véhicule, dates)..." />
+      <View style={styles.filterRow}>
+        {STATUS_OPTIONS.map((opt) => (
+          <TouchableOpacity
+            key={opt.value || 'all'}
+            style={[styles.filterPill, statut === opt.value && styles.filterPillActive]}
+            onPress={() => setStatut(opt.value)}
+          >
+            <Text style={[styles.filterText, statut === opt.value && styles.filterTextActive]}>{opt.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <FlatList
         data={reservations}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
+        ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             <MaterialIcons name="event-busy" size={48} color={theme.colors.outlineVariant} />
@@ -115,6 +138,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
+  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
+  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
+  filterTextActive: { color: theme.colors.onPrimary },
+  footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.xl,
@@ -127,6 +156,8 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
   vehicleIcon: { width: 48, height: 48, borderRadius: theme.borderRadius.md, backgroundColor: theme.colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   vehicleName: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface },
+  agencyRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  agencyName: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.xs, color: theme.colors.onSurfaceVariant, flex: 1 },
   vehicleMeta: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginTop: 2 },
   cardBody: { marginTop: theme.spacing.md, gap: theme.spacing.sm },
   infoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

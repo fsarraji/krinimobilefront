@@ -55,8 +55,13 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await clearTokens();
-    setUserState(null);
+    try {
+      await clearTokens();
+    } catch (e) {
+      console.log('LOGOUT ERROR', e);
+    } finally {
+      setUserState(null);
+    }
   };
 
   return (

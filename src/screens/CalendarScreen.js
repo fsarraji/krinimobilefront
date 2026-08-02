@@ -3,14 +3,13 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } 
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { useData } from '../hooks/useData';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 const monthNames = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const dayLabels = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
 export default function CalendarScreen({ navigation }) {
-  const { data, loading, refreshing, refresh } = useData('contracts/');
-  const contracts = data?.results || data || [];
+  const { items: contracts, loading, refreshing, refresh } = usePaginatedList('contracts/', { pageSize: 500 });
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 

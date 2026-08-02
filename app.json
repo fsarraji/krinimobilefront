@@ -37,7 +37,8 @@
           "cameraPermission": "Krini utilise la caméra pour scanner les pièces d'identité des clients.",
           "recordAudioAndroid": false
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

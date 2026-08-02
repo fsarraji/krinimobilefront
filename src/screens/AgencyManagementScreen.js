@@ -2,27 +2,22 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, RefreshControl, ScrollView, Switch } from 'react-native';
 import api from '../api';
 import theme from '../theme';
+import SearchBar from '../components/SearchBar';
+import PaginationFooter from '../components/PaginationFooter';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 export default function AgencyManagementScreen() {
-  const [agencies, setAgencies] = useState([]);
+  const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ nom_agence: '', adresse: '', telephone: '', email: '', rc: '', ice: '', is_active: true });
-
-  const fetchAgencies = useCallback(async () => {
-    try {
-      const res = await api.get('agencies/');
-      setAgencies(res.data.results || res.data || []);
-    } catch (e) { console.error(e); }
-  }, []);
-
-  useEffect(() => { fetchAgencies(); }, [fetchAgencies]);
+  const { items: agencies, loading, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList('agencies/', { search });
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchAgencies();
+    await refresh();
     setRefreshing(false);
   };
 
@@ -41,7 +36,7 @@ export default function AgencyManagementScreen() {
       setShowForm(false);
       setEditing(null);
       setForm({ nom_agence: '', adresse: '', telephone: '', email: '', rc: '', ice: '', is_active: true });
-      fetchAgencies();
+      refresh();
     } catch (e) { Alert.alert('Erreur', e.response?.data?.detail || 'Erreur'); }
     finally { setSaving(false); }
   };
@@ -49,7 +44,7 @@ export default function AgencyManagementScreen() {
   const handleDelete = (id) => {
     Alert.alert('Confirmer', 'Supprimer cette agence ?', [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: async () => { await api.delete(`agencies/${id}/`); fetchAgencies(); }},
+      { text: 'Supprimer', style: 'destructive', onPress: async () => { await api.delete(`agencies/${id}/`); refresh(); }},
     ]);
   };
 
@@ -92,7 +87,8 @@ export default function AgencyManagementScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList data={agencies} keyExtractor={(item) => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />} ListEmptyComponent={<Text style={styles.empty}>Aucune agence</Text>} />
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (nom, email, téléphone)..." />
+      <FlatList data={agencies} keyExtractor={(item) => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />} onEndReached={loadMore} onEndReachedThreshold={0.3} ListEmptyComponent={loading ? null : <Text style={styles.empty}>Aucune agence</Text>} ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />} />
       <TouchableOpacity style={styles.fab} onPress={() => { setEditing(null); setForm({ nom_agence: '', adresse: '', telephone: '', email: '', rc: '', ice: '', is_active: true }); setShowForm(true); }}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
@@ -103,6 +99,7 @@ export default function AgencyManagementScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
+  footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,

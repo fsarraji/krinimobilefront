@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import api from '../api';
@@ -22,9 +22,16 @@ export default function ClientProfileScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const handleLogout = () => {
+    const confirmLogout = () => logout();
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm('Voulez-vous vraiment vous déconnecter ?')) {
+        confirmLogout();
+      }
+      return;
+    }
     Alert.alert('Déconnexion', 'Voulez-vous vraiment vous déconnecter ?', [
       { text: 'Non', style: 'cancel' },
-      { text: 'Oui', style: 'destructive', onPress: () => logout() },
+      { text: 'Oui', style: 'destructive', onPress: confirmLogout },
     ]);
   };
 

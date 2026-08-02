@@ -4,13 +4,17 @@ import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { useData } from '../hooks/useData';
+import SearchBar from '../components/SearchBar';
+import PaginationFooter from '../components/PaginationFooter';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 const categories = ['Maintenance', 'Fuel', 'Salaires', 'Loyer', 'Utilities', 'Taxes', 'Autre'];
 
 export default function ExpensesScreen() {
-  const { data, loading, refreshing, refresh } = useData('expenses/');
-  const expenses = data?.results || data || [];
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const { items, loading, refreshing, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList('expenses/', { search, filters: { category } });
+  const expenses = items;
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ title: '', category: 'Maintenance', amount: '', expense_date: new Date().toISOString().slice(0, 10), notes: '' });
@@ -114,13 +118,34 @@ export default function ExpensesScreen() {
         </ScrollView>
       ) : (
         <>
+          <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (titre, notes)..." />
+          <View style={styles.filterRow}>
+            <TouchableOpacity
+              style={[styles.filterPill, !category && styles.filterPillActive]}
+              onPress={() => setCategory('')}
+            >
+              <Text style={[styles.filterText, !category && styles.filterTextActive]}>Toutes</Text>
+            </TouchableOpacity>
+            {categories.map((c) => (
+              <TouchableOpacity
+                key={c}
+                style={[styles.filterPill, category === c && styles.filterPillActive]}
+                onPress={() => setCategory(category === c ? '' : c)}
+              >
+                <Text style={[styles.filterText, category === c && styles.filterTextActive]}>{c}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
           <FlatList
             data={expenses}
             keyExtractor={(item) => String(item.id)}
             renderItem={renderItem}
             contentContainerStyle={styles.list}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.3}
             ListEmptyComponent={        <Text style={styles.empty}>Aucune dépense enregistrée.</Text>}
+            ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />}
           />
           <TouchableOpacity style={styles.fab} onPress={() => setShowForm(true)}>
             <MaterialIcons name="add" size={28} color={theme.colors.onPrimary} />
@@ -134,6 +159,12 @@ export default function ExpensesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
+  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
+  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
+  filterTextActive: { color: theme.colors.onPrimary },
+  footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,

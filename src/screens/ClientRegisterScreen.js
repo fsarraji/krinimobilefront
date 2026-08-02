@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
@@ -56,6 +57,7 @@ export default function ClientRegisterScreen({ navigation, route }) {
       const username = (form.email || form.telephone).trim();
       await login(username, form.password);
     } catch (e) {
+      console.log('REGISTER ERROR', e.response?.status, JSON.stringify(e.response?.data, null, 2), e.message);
       const data = e.response?.data;
       const fields = data && typeof data === 'object' ? Object.values(data).flat().join('\n') : '';
       Alert.alert('Erreur', fields || e.response?.data?.detail || 'Inscription impossible.');
@@ -88,8 +90,7 @@ export default function ClientRegisterScreen({ navigation, route }) {
         <TextInput style={styles.input} value={form.cin_passport} onChangeText={set('cin_passport')} placeholder="AB123456" placeholderTextColor={theme.colors.onSurfaceVariant} />
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Expiration CIN</Text>
-            <TextInput style={styles.input} value={form.date_expiration_cin} onChangeText={set('date_expiration_cin')} placeholder="AAAA-MM-JJ" placeholderTextColor={theme.colors.onSurfaceVariant} />
+            <DateInput label="Expiration CIN" value={form.date_expiration_cin} onChange={set('date_expiration_cin')} minimumDate={new Date()} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Nationalité</Text>
@@ -99,8 +100,7 @@ export default function ClientRegisterScreen({ navigation, route }) {
 
         <Text style={styles.label}>Numéro du permis *</Text>
         <TextInput style={styles.input} value={form.permis_conduite} onChangeText={set('permis_conduite')} placeholder="Numéro de permis" placeholderTextColor={theme.colors.onSurfaceVariant} />
-        <Text style={styles.label}>Date de délivrance du permis</Text>
-        <TextInput style={styles.input} value={form.date_delivrance_permis} onChangeText={set('date_delivrance_permis')} placeholder="AAAA-MM-JJ" placeholderTextColor={theme.colors.onSurfaceVariant} />
+        <DateInput label="Date de délivrance du permis" value={form.date_delivrance_permis} onChange={set('date_delivrance_permis')} maximumDate={new Date()} />
 
         <Text style={styles.label}>Adresse *</Text>
         <TextInput style={[styles.input, styles.textArea]} value={form.adresse} onChangeText={set('adresse')} multiline numberOfLines={3} placeholder="Adresse complète" placeholderTextColor={theme.colors.onSurfaceVariant} />
@@ -130,6 +130,54 @@ export default function ClientRegisterScreen({ navigation, route }) {
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+function DateInput({ label, value, onChange, minimumDate, maximumDate }) {
+  const [show, setShow] = useState(false);
+  const base = value ? new Date(value + 'T00:00:00') : new Date();
+  const fmt = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  if (Platform.OS === 'web') {
+    return (
+      <View>
+        <Text style={styles.label}>{label}</Text>
+        <TextInput
+          style={styles.input}
+          value={value}
+          onChangeText={onChange}
+          placeholder="AAAA-MM-JJ"
+          placeholderTextColor={theme.colors.onSurfaceVariant}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity style={styles.dateField} onPress={() => setShow(true)} activeOpacity={0.7}>
+        <Text style={[styles.dateValue, !value && styles.datePlaceholder]}>
+          {value || 'Sélectionner'}
+        </Text>
+        <MaterialIcons name="calendar-today" size={18} color={theme.colors.onSurfaceVariant} />
+      </TouchableOpacity>
+      {show && (
+        <DateTimePicker
+          value={base}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          minimumDate={minimumDate}
+          maximumDate={maximumDate}
+          onChange={(event, selected) => {
+            setShow(Platform.OS === 'ios');
+            if (event.type === 'set' && selected) onChange(fmt(selected));
+            if (Platform.OS === 'android') setShow(false);
+          }}
+        />
+      )}
+    </View>
   );
 }
 
@@ -181,6 +229,19 @@ const styles = StyleSheet.create({
     color: theme.colors.onSurface,
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
+  dateField: {
+    backgroundColor: theme.colors.surfaceContainerLowest,
+    borderWidth: 1,
+    borderColor: '#dadce0',
+    borderRadius: theme.borderRadius.sm,
+    padding: 12,
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dateValue: { fontSize: theme.fontSize.md, color: theme.colors.onSurface },
+  datePlaceholder: { color: theme.colors.onSurfaceVariant },
   row: { flexDirection: 'row', gap: theme.spacing.sm },
   scanCard: {
     backgroundColor: theme.colors.surfaceContainerLowest,

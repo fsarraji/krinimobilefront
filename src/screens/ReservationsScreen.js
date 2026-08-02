@@ -1,16 +1,29 @@
 import { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import api from '../api';
 import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { printReservationReceipt } from '../printUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { useData } from '../hooks/useData';
+import SearchBar from '../components/SearchBar';
+import PaginationFooter from '../components/PaginationFooter';
+import { usePaginatedList } from '../hooks/usePaginatedList';
+import { Alert } from '../utils/alert';
+import { confirmDialog } from '../utils/confirm';
+
+const REQUEST_STATUS_META = {
+  PENDING: { label: 'En attente', color: theme.colors.warning },
+  CONFIRMED: { label: 'Confirmée', color: theme.colors.success },
+  CANCELLED: { label: 'Annulée', color: theme.colors.error },
+};
 
 export default function ReservationsScreen({ navigation }) {
-  const { data, loading, refreshing, refresh } = useData('contracts/?statut=RESERVE');
-  const reservations = data?.results || data || [];
+  const [tab, setTab] = useState('demandes');
+  const [search, setSearch] = useState('');
+  const baseUrl = tab === 'demandes' ? 'reservations/' : 'contracts/?statut=RESERVE';
+  const { items, loading, refreshing, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList(baseUrl, { search });
   const [activating, setActivating] = useState(null);
+  const [updating, setUpdating] = useState(null);
   const [printingId, setPrintingId] = useState(null);
 
   const handlePrint = (id) => {
@@ -20,29 +33,86 @@ export default function ReservationsScreen({ navigation }) {
     });
   };
 
+  const handleConfirm = (item) => {
+    confirmDialog(`Confirmer la demande de ${item.client_name} pour le véhicule ${item.vehicle_name} ?`, async () => {
+      setUpdating(item.id);
+      try {
+        await api.patch(`reservations/${item.id}/`, { statut: 'CONFIRMED' });
+        refresh();
+        Alert.alert('Succès', 'Demande confirmée. Le client voit maintenant sa réservation comme confirmée.');
+      } catch (e) {
+        Alert.alert('Erreur', e.response?.data?.detail || 'Impossible de confirmer cette demande.');
+      } finally {
+        setUpdating(null);
+      }
+    });
+  };
+
+  const handleRefuse = (item) => {
+    confirmDialog(`Refuser la demande de ${item.client_name} pour le véhicule ${item.vehicle_name} ?`, async () => {
+      setUpdating(item.id);
+      try {
+        await api.patch(`reservations/${item.id}/`, { statut: 'CANCELLED' });
+        refresh();
+        Alert.alert('Succès', 'Demande refusée.');
+      } catch (e) {
+        Alert.alert('Erreur', e.response?.data?.detail || 'Impossible de refuser cette demande.');
+      } finally {
+        setUpdating(null);
+      }
+    });
+  };
+
   const handleActivate = async (item) => {
-    Alert.alert(
-      'Activer la réservation',
-      `Passer la réservation de ${item.client_nom || item.client} en contrat actif ?`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Activer', onPress: async () => {
-          setActivating(item.id);
-          try {
-            await api.patch(`contracts/${item.id}/`, {
-              statut: 'EN_COURS',
-              km_sortie: item.km_sortie || 0,
-              carburant_sortie: item.carburant_sortie || '4/8',
-            });
-            refresh();
-            Alert.alert('Succès', 'Réservation activée');
-          } catch (e) {
-            Alert.alert('Erreur', e.response?.data?.detail || 'Erreur');
-          } finally {
-            setActivating(null);
-          }
-        }},
-      ]
+    confirmDialog(`Passer la réservation de ${item.client_nom || item.client} en contrat actif ?`, async () => {
+      setActivating(item.id);
+      try {
+        await api.patch(`contracts/${item.id}/`, {
+          statut: 'EN_COURS',
+          km_sortie: item.km_sortie || 0,
+          carburant_sortie: item.carburant_sortie || '4/8',
+        });
+        refresh();
+        Alert.alert('Succès', 'Réservation activée');
+      } catch (e) {
+        Alert.alert('Erreur', e.response?.data?.detail || 'Erreur');
+      } finally {
+        setActivating(null);
+      }
+    });
+  };
+
+  const renderRequest = ({ item }) => {
+    const meta = REQUEST_STATUS_META[item.statut] || REQUEST_STATUS_META.PENDING;
+    const busy = updating === item.id;
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.clientName}>{item.client_name}</Text>
+            <Text style={styles.vehicleText}>{item.vehicle_name}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: `${meta.color}22` }]}>
+            <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
+          </View>
+        </View>
+        <View style={styles.dateRow}>
+          <Text style={styles.dateLabel}>Du</Text>
+          <Text style={styles.dateValue}>{item.date_sortie?.slice(0, 10)}</Text>
+          <Text style={styles.dateLabel}>au</Text>
+          <Text style={styles.dateValue}>{item.date_retour_prevue?.slice(0, 10)}</Text>
+        </View>
+        {item.statut === 'PENDING' && (
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.rejectButton} onPress={() => handleRefuse(item)} disabled={busy}>
+              <Text style={styles.rejectText}>{busy ? '...' : 'Refuser'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.activateButton} onPress={() => handleConfirm(item)} disabled={busy}>
+              <Text style={styles.activateText}>{busy ? '...' : 'Confirmer'}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     );
   };
 
@@ -78,15 +148,27 @@ export default function ReservationsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.tabs}>
+        <TouchableOpacity style={[styles.tab, tab === 'demandes' && styles.tabActive]} onPress={() => setTab('demandes')}>
+          <Text style={[styles.tabText, tab === 'demandes' && styles.tabTextActive]}>Demandes clients</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, tab === 'agence' && styles.tabActive]} onPress={() => setTab('agence')}>
+          <Text style={[styles.tabText, tab === 'agence' && styles.tabTextActive]}>Réservations</Text>
+        </TouchableOpacity>
+      </View>
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (client, matricule, marque)..." />
       <FlatList
-        data={reservations}
+        data={items}
         keyExtractor={(item) => String(item.id)}
-        renderItem={renderItem}
+        renderItem={tab === 'demandes' ? renderRequest : renderItem}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} colors={[theme.colors.primary]} tintColor={theme.colors.primary} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
         ListEmptyComponent={(
-          <Text style={styles.empty}>Aucune réservation en attente.</Text>
+          <Text style={styles.empty}>{tab === 'demandes' ? 'Aucune demande de réservation.' : 'Aucune réservation en attente.'}</Text>
         )}
+        ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />}
       />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ReservationForm', {})}>
         <MaterialIcons name="add" size={28} color={theme.colors.onPrimary} />
@@ -103,6 +185,17 @@ export default function ReservationsScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
+  tabs: { flexDirection: 'row', paddingHorizontal: theme.spacing.md, paddingTop: theme.spacing.md, gap: theme.spacing.sm },
+  tab: {
+    flex: 1,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.surfaceContainerHighest,
+    alignItems: 'center',
+  },
+  tabActive: { backgroundColor: theme.colors.primary },
+  tabText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
+  tabTextActive: { color: theme.colors.onPrimary },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -111,6 +204,7 @@ const styles = StyleSheet.create({
   },
   overlayText: { color: '#fff', marginTop: theme.spacing.md, fontFamily: theme.fonts.bodyMedium, fontSize: theme.fontSize.md },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
+  footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,
@@ -147,6 +241,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activateText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onPrimary },
+  rejectButton: {
+    flex: 1,
+    backgroundColor: theme.colors.errorContainer,
+    borderRadius: theme.borderRadius.sm,
+    padding: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.error,
+  },
+  rejectText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.error },
   fab: {
     position: 'absolute', bottom: 24, right: 24,
     backgroundColor: theme.colors.primary, width: 56, height: 56,

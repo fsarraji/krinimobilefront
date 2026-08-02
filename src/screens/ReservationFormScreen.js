@@ -16,8 +16,8 @@ export default function ReservationFormScreen({ navigation }) {
 
   useEffect(() => {
     Promise.all([
-      api.get('vehicles/').then(r => setVehicles(r.data.results || r.data || [])),
-      api.get('clients/').then(r => setClients(r.data.results || r.data || [])),
+      api.get('vehicles/', { params: { page_size: 500 } }).then(r => setVehicles(r.data.results || r.data || [])),
+      api.get('clients/', { params: { page_size: 500 } }).then(r => setClients(r.data.results || r.data || [])),
       api.get('agency/settings/').then(r => setSettings(r.data)).catch(() => {}),
     ]).catch(() => {});
   }, []);

@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { useData } from '../hooks/useData';
+import SearchBar from '../components/SearchBar';
+import PaginationFooter from '../components/PaginationFooter';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 export default function PaymentsScreen() {
-  const { data, loading, refreshing, refresh } = useData('payments/');
-  const payments = data?.results || data || [];
+  const [search, setSearch] = useState('');
+  const { items, loading, refreshing, loadingMore, page, total: totalCount, totalPages, loadMore, refresh, goToPage } = usePaginatedList('payments/', { search });
+  const payments = items;
   const total = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
   const renderItem = ({ item }) => (
@@ -27,16 +30,20 @@ export default function PaymentsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.totalBar}>
-        <Text style={styles.totalLabel}>Total collecté</Text>
+        <Text style={styles.totalLabel}>Total collecté (affiché)</Text>
         <Text style={styles.totalAmount}>{total.toLocaleString()} DH</Text>
       </View>
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (référence, notes)..." />
       <FlatList
         data={payments}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
         ListEmptyComponent={<Text style={styles.empty}>Aucun paiement enregistré.</Text>}
+        ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={totalCount} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />}
       />
     </View>
   );
@@ -55,6 +62,7 @@ const styles = StyleSheet.create({
   totalLabel: { fontFamily: theme.fonts.body, color: theme.colors.onPrimary, fontSize: theme.fontSize.md, opacity: 0.9 },
   totalAmount: { fontFamily: theme.fonts.headlineBold, color: theme.colors.onPrimary, fontSize: theme.fontSize.xxl },
   list: { padding: theme.spacing.md },
+  footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,

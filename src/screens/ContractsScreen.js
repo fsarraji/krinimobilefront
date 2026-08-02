@@ -5,7 +5,9 @@ import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { printContract } from '../printUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { useData } from '../hooks/useData';
+import SearchBar from '../components/SearchBar';
+import PaginationFooter from '../components/PaginationFooter';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 const statusColors = {
   RESERVE: theme.colors.statusReserve,
@@ -28,9 +30,19 @@ const statusLabels = {
   ANNULE: 'Annulé',
 };
 
+const statusOptions = [
+  { value: '', label: 'Tous' },
+  { value: 'RESERVE', label: 'Réservation' },
+  { value: 'EN_COURS', label: 'En cours' },
+  { value: 'TERMINE', label: 'Terminé' },
+  { value: 'ANNULE', label: 'Annulé' },
+];
+
 export default function ContractsScreen({ navigation }) {
-  const { data, loading, refreshing, refresh } = useData('contracts/');
-  const contracts = data?.results || data || [];
+  const [search, setSearch] = useState('');
+  const [statut, setStatut] = useState('');
+  const { items, loading, refreshing, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList('contracts/', { search, filters: { statut } });
+  const contracts = items;
   const [printingId, setPrintingId] = useState(null);
 
   const renderItem = ({ item }) => (
@@ -75,13 +87,28 @@ export default function ContractsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (client, matricule, marque)..." />
+      <View style={styles.filterRow}>
+        {statusOptions.map((opt) => (
+          <TouchableOpacity
+            key={opt.value || 'all'}
+            style={[styles.filterPill, statut === opt.value && styles.filterPillActive]}
+            onPress={() => setStatut(opt.value)}
+          >
+            <Text style={[styles.filterText, statut === opt.value && styles.filterTextActive]}>{opt.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <FlatList
         data={contracts}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
         ListEmptyComponent={<Text style={styles.empty}>Aucun contrat enregistré.</Text>}
+        ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />}
       />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ContractForm', {})}>
         <MaterialIcons name="add" size={28} color={theme.colors.onPrimary} />
@@ -106,6 +133,12 @@ const styles = StyleSheet.create({
   },
   overlayText: { color: '#fff', marginTop: theme.spacing.md, fontFamily: theme.fonts.bodyMedium, fontSize: theme.fontSize.md },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
+  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
+  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
+  filterTextActive: { color: theme.colors.onPrimary },
+  footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,

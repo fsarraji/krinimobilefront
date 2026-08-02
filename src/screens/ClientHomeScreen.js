@@ -13,7 +13,7 @@ export default function ClientHomeScreen({ navigation }) {
   const [category, setCategory] = useState('Tous');
 
   useEffect(() => {
-    api.get('public-vehicles/')
+    api.get('public-vehicles/', { params: { page_size: 500 } })
       .then((r) => setVehicles(r.data.results || r.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -44,6 +44,10 @@ export default function ClientHomeScreen({ navigation }) {
         <Text style={styles.vehicleName} numberOfLines={1}>
           {item.marque_nom || item.marque || ''} {item.modele_nom || item.modele || ''}
         </Text>
+        <View style={styles.companyRow}>
+          <MaterialIcons name="business" size={13} color={theme.colors.onSurfaceVariant} />
+          <Text style={styles.companyName} numberOfLines={1}>{item.agency_details?.nom_agence || ''}</Text>
+        </View>
         <Text style={styles.vehicleMeta}>{item.matricule} · {item.categorie || 'Standard'}</Text>
         <View style={styles.priceRow}>
           <Text style={styles.priceValue}>{item.prix_par_jour?.toLocaleString() || '0'} DH</Text>
@@ -143,6 +147,8 @@ const styles = StyleSheet.create({
   imagePlaceholder: { height: 150, backgroundColor: theme.colors.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center' },
   cardContent: { padding: theme.spacing.md },
   vehicleName: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.lg, color: theme.colors.primary },
+  companyRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  companyName: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.xs, color: theme.colors.onSurfaceVariant, flex: 1 },
   vehicleMeta: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginTop: 2 },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', marginTop: theme.spacing.sm },
   priceValue: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.xl, color: theme.colors.primary },

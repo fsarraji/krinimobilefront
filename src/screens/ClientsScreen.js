@@ -4,15 +4,19 @@ import { MaterialIcons } from '@expo/vector-icons';
 import api from '../api';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { useData } from '../hooks/useData';
+import SearchBar from '../components/SearchBar';
+import PaginationFooter from '../components/PaginationFooter';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 function getInitials(prenom, nom) {
   return ((prenom?.charAt(0) || '') + (nom?.charAt(0) || '')).toUpperCase() || '?';
 }
 
 export default function ClientsScreen({ navigation }) {
-  const { data, loading, refreshing, refresh } = useData('clients/');
-  const clients = data?.results || data || [];
+  const [search, setSearch] = useState('');
+  const [blacklisted, setBlacklisted] = useState(false);
+  const { items, loading, refreshing, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList('clients/', { search, filters: { liste_noire: blacklisted || undefined } });
+  const clients = items;
 
   const handleDelete = (id) => {
     Alert.alert('Confirmer', 'Supprimer ce client ?', [
@@ -50,13 +54,31 @@ export default function ClientsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (nom, prénom, CIN, téléphone)..." />
+      <View style={styles.filterRow}>
+        <TouchableOpacity
+          style={[styles.filterPill, !blacklisted && styles.filterPillActive]}
+          onPress={() => setBlacklisted(false)}
+        >
+          <Text style={[styles.filterText, !blacklisted && styles.filterTextActive]}>Tous</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterPill, blacklisted && styles.filterPillActive]}
+          onPress={() => setBlacklisted(true)}
+        >
+          <Text style={[styles.filterText, blacklisted && styles.filterTextActive]}>Liste noire</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={clients}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.3}
         ListEmptyComponent={<Text style={styles.empty}>Aucun client trouvé dans l'annuaire.</Text>}
+        ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />}
       />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ClientForm', {})}>
         <MaterialIcons name="add" size={28} color={theme.colors.onPrimary} />
@@ -68,6 +90,12 @@ export default function ClientsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
+  filterRow: { flexDirection: 'row', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
+  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
+  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
+  filterTextActive: { color: theme.colors.onPrimary },
+  footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,

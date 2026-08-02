@@ -24,7 +24,7 @@ export default function MarketplaceScreen({ navigation }) {
   const [endDate] = useState(new Date(Date.now() + 86400000));
 
   useEffect(() => {
-    axios.get(`${API_URL}public-vehicles/`)
+    axios.get(`${API_URL}public-vehicles/`, { params: { page_size: 500 } })
       .then(r => setVehicles(r.data.results || r.data || []))
       .catch(() => {})
       .finally(() => setLoading(false));

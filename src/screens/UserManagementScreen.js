@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, RefreshControl, ScrollView, Switch } from 'react-native';
 import api from '../api';
 import theme from '../theme';
+import SearchBar from '../components/SearchBar';
+import PaginationFooter from '../components/PaginationFooter';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 const roleColors = {
   SUPERADMIN: { bg: '#fce4ec', text: theme.colors.error },
@@ -10,27 +13,28 @@ const roleColors = {
 };
 
 export default function UserManagementScreen() {
-  const [users, setUsers] = useState([]);
+  const [search, setSearch] = useState('');
+  const [role, setRole] = useState('');
   const [agencies, setAgencies] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ username: '', email: '', first_name: '', last_name: '', role: 'EMPLOYEE', agency: '', password: '', is_active: true });
+  const { items: users, loading, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList('users/', { search, filters: { role } });
 
-  const fetchUsers = useCallback(async () => {
+  const fetchAgencies = useCallback(async () => {
     try {
-      const [uRes, aRes] = await Promise.all([api.get('users/'), api.get('agencies/')]);
-      setUsers(uRes.data.results || uRes.data || []);
+      const aRes = await api.get('agencies/', { params: { page_size: 500 } });
       setAgencies(aRes.data.results || aRes.data || []);
     } catch (e) { console.error(e); }
   }, []);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => { fetchAgencies(); }, [fetchAgencies]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchUsers();
+    await Promise.all([refresh(), fetchAgencies()]);
     setRefreshing(false);
   };
 
@@ -50,7 +54,7 @@ export default function UserManagementScreen() {
       else await api.post('users/', payload);
       setShowForm(false); setEditing(null);
       setForm({ username: '', email: '', first_name: '', last_name: '', role: 'EMPLOYEE', agency: '', password: '', is_active: true });
-      fetchUsers();
+      refresh();
     } catch (e) { Alert.alert('Erreur', e.response?.data?.detail || 'Erreur'); }
     finally { setSaving(false); }
   };
@@ -58,7 +62,7 @@ export default function UserManagementScreen() {
   const handleDelete = (id) => {
     Alert.alert('Confirmer', "Supprimer cet utilisateur ?", [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Supprimer', style: 'destructive', onPress: async () => { await api.delete(`users/${id}/`); fetchUsers(); }},
+      { text: 'Supprimer', style: 'destructive', onPress: async () => { await api.delete(`users/${id}/`); refresh(); }},
     ]);
   };
 
@@ -128,7 +132,15 @@ export default function UserManagementScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList data={users} keyExtractor={(item) => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />} ListEmptyComponent={<Text style={styles.empty}>Aucun utilisateur</Text>} />
+      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (nom, email)..." />
+      <View style={styles.filterRow}>
+        {[['', 'Tous'], ['SUPERADMIN', 'Superadmin'], ['OWNER', 'Owner'], ['EMPLOYEE', 'Employé']].map(([val, label]) => (
+          <TouchableOpacity key={val || 'all'} style={[styles.filterPill, role === val && styles.filterPillActive]} onPress={() => setRole(val)}>
+            <Text style={[styles.filterText, role === val && styles.filterTextActive]}>{label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <FlatList data={users} keyExtractor={(item) => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />} onEndReached={loadMore} onEndReachedThreshold={0.3} ListEmptyComponent={loading ? null : <Text style={styles.empty}>Aucun utilisateur</Text>} ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />} />
       <TouchableOpacity style={styles.fab} onPress={() => { setEditing(null); setForm({ username: '', email: '', first_name: '', last_name: '', role: 'EMPLOYEE', agency: '', password: '', is_active: true }); setShowForm(true); }}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
@@ -139,6 +151,12 @@ export default function UserManagementScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
+  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
+  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
+  filterTextActive: { color: theme.colors.onPrimary },
+  footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,

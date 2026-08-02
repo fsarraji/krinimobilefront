@@ -39,7 +39,7 @@ export default function BookingFormScreen({ navigation, route }) {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    api.get('public-vehicles/')
+    api.get('public-vehicles/', { params: { page_size: 500 } })
       .then((r) => setVehicles(r.data.results || r.data || []))
       .catch(() => {})
       .finally(() => setLoadingVehicles(false));

@@ -92,6 +92,21 @@ export default function ClientReservationFormScreen({ navigation, route }) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
+          <View style={styles.companyRow}>
+            <View style={styles.companyIcon}>
+              <MaterialIcons name="business" size={18} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.companyLabel}>SOCIÉTÉ DE LOCATION</Text>
+              <Text style={styles.companyName}>{vehicle.agency_details?.nom_agence || 'Nom de la société'}</Text>
+              {(vehicle.agency_details?.adresse || vehicle.agency_details?.telephone) ? (
+                <Text style={styles.companyMeta}>
+                  {[vehicle.agency_details?.adresse, vehicle.agency_details?.telephone].filter(Boolean).join(' · ')}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+          <View style={styles.vehicleDivider} />
           <View style={styles.vehicleIcon}>
             <MaterialIcons name="directions-car" size={32} color={theme.colors.primary} />
           </View>
@@ -178,6 +193,12 @@ const styles = StyleSheet.create({
     color: theme.colors.onSurface,
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
+  companyRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, marginBottom: theme.spacing.sm },
+  companyIcon: { width: 36, height: 36, borderRadius: theme.borderRadius.sm, backgroundColor: theme.colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  companyLabel: { fontFamily: theme.fonts.label, fontSize: theme.fontSize.xs, letterSpacing: 0.6, color: theme.colors.onSurfaceVariant, textTransform: 'uppercase' },
+  companyName: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface, marginTop: 2 },
+  companyMeta: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.xs, color: theme.colors.onSurfaceVariant, marginTop: 2 },
+  vehicleDivider: { height: 1, backgroundColor: theme.colors.outlineVariant, marginBottom: theme.spacing.md },
   vehicleIcon: { width: 64, height: 64, borderRadius: theme.borderRadius.md, backgroundColor: theme.colors.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: theme.spacing.sm },
   vehicleName: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.lg, color: theme.colors.onSurface },
   vehicleMeta: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginTop: 2 },

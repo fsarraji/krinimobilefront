@@ -30,8 +30,8 @@ export default function ContractFormScreen({ navigation }) {
     (async () => {
       try {
         const [vehRes, cliRes, setRes] = await Promise.all([
-          api.get('vehicles/').catch(() => ({ data: [] })),
-          api.get('clients/').catch(() => ({ data: [] })),
+          api.get('vehicles/', { params: { page_size: 500 } }).catch(() => ({ data: [] })),
+          api.get('clients/', { params: { page_size: 500 } }).catch(() => ({ data: [] })),
           api.get('agency/settings/').catch(() => ({ data: null })),
         ]);
         setVehicles(vehRes.data.results || vehRes.data || []);
