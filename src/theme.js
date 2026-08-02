@@ -41,6 +41,8 @@ const theme = {
     errorContainer: '#ffdad6',
     onError: '#ffffff',
     onErrorContainer: '#93000a',
+    success: '#1a7f37',
+    warning: '#b25e00',
     outline: '#757682',
     outlineVariant: '#c5c5d3',
     surfaceTint: '#4059aa',

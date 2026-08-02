@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import theme from '../theme';
 
-export default function LoginScreen({ navigation }) {
+export default function ClientAuthScreen({ navigation }) {
   const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +17,10 @@ export default function LoginScreen({ navigation }) {
     }
     setLoading(true);
     try {
-      await login(username, password);
+      const userData = await login(username, password);
+      if (userData.role !== 'CLIENT') {
+        Alert.alert('Compte incorrect', 'Ce compte n\'est pas un compte client. Utilisez la connexion professionnelle.');
+      }
     } catch (e) {
       Alert.alert('Erreur', e.response?.data?.detail || 'Identifiants incorrects');
     } finally {
@@ -27,12 +31,19 @@ export default function LoginScreen({ navigation }) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.inner}>
-        <Text style={styles.title}>Krini</Text>
-        <Text style={styles.subtitle}>Location de véhicules</Text>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+          <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        </TouchableOpacity>
+
+        <View style={styles.logoBox}>
+          <MaterialIcons name="person" size={30} color={theme.colors.onPrimary} />
+        </View>
+        <Text style={styles.title}>Espace client</Text>
+        <Text style={styles.subtitle}>Connectez-vous pour réserver un véhicule</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Nom d'utilisateur"
+          placeholder="Email ou téléphone"
           placeholderTextColor={theme.colors.outline}
           value={username}
           onChangeText={setUsername}
@@ -53,8 +64,8 @@ export default function LoginScreen({ navigation }) {
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Se connecter</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.clientButton} onPress={() => navigation.navigate('ClientAuth')} activeOpacity={0.8}>
-          <Text style={styles.clientButtonText}>Espace client</Text>
+        <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate('ClientRegister')} activeOpacity={0.8}>
+          <Text style={styles.registerText}>Pas encore de compte ? <Text style={styles.registerLink}>Créer un compte</Text></Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -62,28 +73,36 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
+  container: { flex: 1, backgroundColor: theme.colors.background },
   inner: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 32,
   },
+  backButton: { position: 'absolute', top: 60, left: 24 },
+  logoBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
   title: {
-    fontSize: 36,
+    fontSize: 28,
     fontFamily: theme.fonts.headlineBold,
     color: theme.colors.primary,
     textAlign: 'center',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: theme.fonts.body,
     color: theme.colors.onSurfaceVariant,
     textAlign: 'center',
-    marginBottom: 48,
+    marginBottom: 40,
   },
   input: {
     backgroundColor: theme.colors.surfaceContainerLowest,
@@ -110,18 +129,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: theme.fonts.bodySemibold,
   },
-  clientButton: {
-    backgroundColor: theme.colors.surfaceContainerLowest,
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.md,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  clientButtonText: {
-    color: theme.colors.primary,
-    fontSize: 16,
-    fontFamily: theme.fonts.bodySemibold,
-  },
+  registerButton: { alignItems: 'center', marginTop: 24 },
+  registerText: { fontSize: 14, fontFamily: theme.fonts.body, color: theme.colors.onSurfaceVariant },
+  registerLink: { fontFamily: theme.fonts.bodySemibold, color: theme.colors.primary },
 });

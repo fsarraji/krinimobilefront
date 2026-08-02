@@ -3,10 +3,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import LoginScreen from '../screens/LoginScreen';
+import ClientAuthScreen from '../screens/ClientAuthScreen';
+import ClientRegisterScreen from '../screens/ClientRegisterScreen';
+import DocumentScanScreen from '../screens/DocumentScanScreen';
 import TabNavigator from './TabNavigator';
+import ClientNavigator from './ClientNavigator';
+import ClientReservationFormScreen from '../screens/ClientReservationFormScreen';
 import VehicleFormScreen from '../screens/VehicleFormScreen';
 import ClientFormScreen from '../screens/ClientFormScreen';
-import DocumentScanScreen from '../screens/DocumentScanScreen';
 import ContractFormScreen from '../screens/ContractFormScreen';
 import EditContractScreen from '../screens/EditContractScreen';
 import ReservationFormScreen from '../screens/ReservationFormScreen';
@@ -35,7 +39,18 @@ export default function AppNavigator() {
     <NavigationContainer>
       <Stack.Navigator screenOptions={commonScreenOptions}>
         {!user ? (
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="ClientAuth" component={ClientAuthScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="ClientRegister" component={ClientRegisterScreen} options={{ title: 'Créer un compte' }} />
+            <Stack.Screen name="DocumentScan" component={DocumentScanScreen} options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+          </>
+        ) : user.role === 'CLIENT' ? (
+          <>
+            <Stack.Screen name="ClientHome" component={ClientNavigator} options={{ headerShown: false }} />
+            <Stack.Screen name="ClientReservationForm" component={ClientReservationFormScreen} options={{ title: 'Nouvelle réservation' }} />
+            <Stack.Screen name="DocumentScan" component={DocumentScanScreen} options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+          </>
         ) : (
           <>
             <Stack.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
