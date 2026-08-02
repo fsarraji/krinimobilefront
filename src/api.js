@@ -7,11 +7,16 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://kriniback.onrender.c
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 30000,
+  timeout: 60000,
 });
 
 let isRefreshing = false;
 let pendingQueue = [];
+let authErrorHandler = null;
+
+export const setAuthErrorHandler = (fn) => {
+  authErrorHandler = fn;
+};
 
 const processQueue = (error) => {
   pendingQueue.forEach(({ resolve, reject }) => (error ? reject(error) : resolve()));
@@ -82,6 +87,7 @@ api.interceptors.response.use(
       processQueue(e);
       isRefreshing = false;
       await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user']);
+      authErrorHandler?.();
       return Promise.reject(error);
     }
   }
