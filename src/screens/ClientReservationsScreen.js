@@ -46,6 +46,27 @@ export default function ClientReservationsScreen({ navigation }) {
     ]);
   };
 
+  const handleDelete = (id) => {
+    const doDelete = async () => {
+      try {
+        await api.delete(`reservations/${id}/`);
+        refresh();
+      } catch (e) {
+        Alert.alert('Erreur', 'Impossible de supprimer cette réservation.');
+      }
+    };
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm('Voulez-vous vraiment supprimer cette réservation ?')) {
+        doDelete();
+      }
+      return;
+    }
+    Alert.alert('Supprimer la réservation', 'Voulez-vous vraiment supprimer cette réservation ?', [
+      { text: 'Non', style: 'cancel' },
+      { text: 'Oui, supprimer', style: 'destructive', onPress: doDelete },
+    ]);
+  };
+
   const renderItem = ({ item }) => {
     const meta = STATUS_META[item.statut] || STATUS_META.PENDING;
     return (
@@ -78,10 +99,16 @@ export default function ClientReservationsScreen({ navigation }) {
           </View>
         </View>
         {item.statut === 'PENDING' && (
-          <TouchableOpacity style={styles.cancelButton} onPress={() => handleCancel(item.id)} activeOpacity={0.8}>
-            <MaterialIcons name="cancel" size={18} color={theme.colors.error} />
-            <Text style={styles.cancelText}>Annuler la réservation</Text>
-          </TouchableOpacity>
+          <View style={styles.pendingActions}>
+            <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)} activeOpacity={0.8}>
+              <MaterialIcons name="delete-outline" size={18} color={theme.colors.onSurfaceVariant} />
+              <Text style={styles.deleteText}>Supprimer</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => handleCancel(item.id)} activeOpacity={0.8}>
+              <MaterialIcons name="cancel" size={18} color={theme.colors.error} />
+              <Text style={styles.cancelText}>Annuler la réservation</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     );
@@ -165,7 +192,10 @@ const styles = StyleSheet.create({
   infoValue: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurface },
   statusBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 6, paddingHorizontal: theme.spacing.sm, paddingVertical: 4, borderRadius: theme.borderRadius.full, marginTop: theme.spacing.xs },
   statusText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm },
-  cancelButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm, marginTop: theme.spacing.md, paddingVertical: 10, borderTopWidth: 1, borderTopColor: 'rgba(197,197,211,0.15)' },
+  pendingActions: { marginTop: theme.spacing.md, borderTopWidth: 1, borderTopColor: 'rgba(197,197,211,0.15)', flexDirection: 'row' },
+  deleteButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm, paddingVertical: 10, borderRightWidth: 1, borderRightColor: 'rgba(197,197,211,0.15)' },
+  deleteText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
+  cancelButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm, paddingVertical: 10 },
   cancelText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.error },
   emptyBox: { alignItems: 'center', paddingTop: theme.spacing.xl * 2, paddingHorizontal: theme.spacing.lg },
   emptyTitle: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.lg, color: theme.colors.onSurface, marginTop: theme.spacing.md },
