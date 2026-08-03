@@ -1,7 +1,8 @@
-import { useState, createElement } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, Platform, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import WebDatePicker from './WebDatePicker';
 import theme from '../theme';
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -28,15 +29,21 @@ export default function DateTimeField({ label, value, onChange, minimumDate }) {
     return (
       <View>
         <Text style={styles.label}>{label}</Text>
-        {createElement('input', {
-          type: 'datetime-local',
-          value: value ? value.replace(' ', 'T') : '',
-          onChange: (e) => {
-            const raw = e.target.value;
-            onChange(raw ? raw.replace('T', ' ') : '');
-          },
-          style: styles.webInput,
-        })}
+        <TouchableOpacity style={styles.dateField} onPress={() => setShow(true)} activeOpacity={0.7}>
+          <Text style={[styles.dateValue, !value && styles.datePlaceholder]}>
+            {value || 'Sélectionner'}
+          </Text>
+          <MaterialIcons name="calendar-today" size={18} color={theme.colors.onSurfaceVariant} />
+        </TouchableOpacity>
+        {show && (
+          <WebDatePicker
+            value={base}
+            includeTime
+            minimumDate={minimumDate}
+            onSelect={(d) => onChange(fmtDateTime(d))}
+            onClose={() => setShow(false)}
+          />
+        )}
       </View>
     );
   }
@@ -105,27 +112,6 @@ const styles = StyleSheet.create({
     color: theme.colors.onSurfaceVariant,
     marginBottom: 6,
     marginTop: theme.spacing.sm,
-  },
-  input: {
-    backgroundColor: theme.colors.surfaceContainerLowest,
-    borderWidth: 1,
-    borderColor: '#dadce0',
-    borderRadius: theme.borderRadius.sm,
-    padding: 12,
-    fontSize: theme.fontSize.md,
-    color: theme.colors.onSurface,
-    marginBottom: theme.spacing.sm,
-  },
-  webInput: {
-    width: '100%',
-    border: '1px solid #dadce0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-    color: theme.colors.onSurface,
-    backgroundColor: theme.colors.surfaceContainerLowest,
   },
   dateField: {
     backgroundColor: theme.colors.surfaceContainerLowest,

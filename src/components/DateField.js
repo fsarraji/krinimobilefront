@@ -1,7 +1,8 @@
-import { useState, createElement } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, Platform, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import WebDatePicker from './WebDatePicker';
 import theme from '../theme';
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -25,12 +26,21 @@ export default function DateField({ label, value, onChange, minimumDate, maximum
     return (
       <View>
         <Text style={styles.label}>{label}</Text>
-        {createElement('input', {
-          type: 'date',
-          value: value ? value.slice(0, 10) : '',
-          onChange: (e) => onChange(e.target.value),
-          style: styles.webInput,
-        })}
+        <TouchableOpacity style={styles.dateField} onPress={() => setShow(true)} activeOpacity={0.7}>
+          <Text style={[styles.dateValue, !value && styles.datePlaceholder]}>
+            {value || 'Sélectionner'}
+          </Text>
+          <MaterialIcons name="calendar-today" size={18} color={theme.colors.onSurfaceVariant} />
+        </TouchableOpacity>
+        {show && (
+          <WebDatePicker
+            value={base}
+            minimumDate={minimumDate}
+            maximumDate={maximumDate}
+            onSelect={(d) => onChange(fmtDate(d))}
+            onClose={() => setShow(false)}
+          />
+        )}
       </View>
     );
   }
@@ -96,17 +106,6 @@ const styles = StyleSheet.create({
   },
   dateValue: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.md, color: theme.colors.onSurface },
   datePlaceholder: { color: theme.colors.onSurfaceVariant },
-  webInput: {
-    width: '100%',
-    border: '1px solid #dadce0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-    color: theme.colors.onSurface,
-    backgroundColor: theme.colors.surfaceContainerLowest,
-  },
   doneButton: {
     alignSelf: 'flex-end',
     paddingHorizontal: 18,
