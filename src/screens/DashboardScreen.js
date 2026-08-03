@@ -1,9 +1,17 @@
-import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, Platform, Animated, useRef, useEffect } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useData } from '../hooks/useData';
 
+const DESIGN_SECONDARY = '#0453cd';
+const DESIGN_FLOET = '#006A60';
+const DESIGN_ALERT_BG = '#FFF4F4';
+const DESIGN_ALERT_ICON = '#FFDADA';
+const DESIGN_ALERT_TITLE = '#8C1D1D';
+const DESIGN_BADGE_DAYS = '#5D6679';
+
+const WEEK_DAYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 
 export default function DashboardScreen({ navigation }) {
   const { data: dashData, loading, refreshing, refresh } = useData('dashboard/');
@@ -13,7 +21,28 @@ export default function DashboardScreen({ navigation }) {
   const totalVehicles = stats?.total_vehicles || 0;
   const rented = stats?.active_contracts || 0;
   const totalRevenue = stats?.total_revenue || 0;
-  const utilization = stats?.utilization || [70, 65, 80, 75, 60];
+  const utilization = stats?.utilization || [];
+
+  const chartData =
+    Array.isArray(utilization) && utilization.length >= 5
+      ? utilization.slice(0, WEEK_DAYS.length)
+      : [70, 65, 80, 75, 60, 85, 72];
+
+  const disponibilite =
+    totalVehicles > 0 ? Math.max(0, (1 - rented / totalVehicles) * 100) : 98.5;
+
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 1200, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 1200, useNativeDriver: true }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [pulse]);
+  const dotOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.35, 1] });
 
   if (loading) return <LoadingSpinner />;
 
@@ -29,42 +58,42 @@ export default function DashboardScreen({ navigation }) {
             <MaterialIcons name="dashboard" size={20} color={theme.colors.primary} />
             <Text style={styles.sectionTitle}>Tableau de bord</Text>
           </View>
-          <Text style={styles.liveLabel}>Temps réel</Text>
+          <View style={styles.livePill}>
+            <Animated.View style={[styles.liveDot, { opacity: dotOpacity }]} />
+            <Text style={styles.liveLabel}>Temps réel</Text>
+          </View>
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.metricsRow}
-          style={{ marginLeft: 24 }}
-        >
+
+        <View style={styles.metricsRow}>
           <View style={styles.metricCard}>
             <Text style={styles.metricLabel}>Total Véhicules</Text>
             <Text style={styles.metricValue}>{totalVehicles}</Text>
             <View style={styles.trendRow}>
-              <MaterialIcons name="directions-car" size={14} color={theme.colors.primary} />
+              <MaterialIcons name="local-shipping" size={14} color={DESIGN_FLOET} />
               <Text style={styles.trendText}>Flotte</Text>
             </View>
           </View>
           <View style={styles.metricCard}>
             <Text style={styles.metricLabel}>Loués</Text>
             <Text style={styles.metricValue}>
-              {rented}<Text style={styles.metricSub}>/{totalVehicles}</Text>
+              {rented}
+              <Text style={styles.metricSub}>/{totalVehicles}</Text>
             </Text>
             <View style={styles.progressBar}>
               <View style={[styles.progressFill, { width: totalVehicles > 0 ? `${(rented / totalVehicles) * 100}%` : '0%' }]} />
             </View>
           </View>
           <View style={[styles.metricCard, styles.metricCardRevenue]}>
-            <Text style={styles.metricLabelRevenue}>Revenu Mensuel</Text>
+            <Text style={styles.metricLabelRevenue}>Revenus</Text>
             <Text style={styles.metricValueRevenue}>
-              {(totalRevenue / 1000).toFixed(1)}k DH
+              {(totalRevenue / 1000).toFixed(1)}k
             </Text>
             <View style={styles.trendRow}>
               <MaterialIcons name="payments" size={14} color={theme.colors.tertiaryFixed} />
-              <Text style={styles.trendTextRevenue}>Mois en cours</Text>
+              <Text style={styles.trendTextRevenue}>Mensuel</Text>
             </View>
           </View>
-        </ScrollView>
+        </View>
 
         <View style={styles.sectionBlock}>
           <View style={styles.sectionHead}>
@@ -79,7 +108,7 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.alertList}>
             <View style={styles.alertCardError}>
               <View style={styles.alertIconError}>
-                <MaterialIcons name="build" size={20} color={theme.colors.onErrorContainer} />
+                <MaterialIcons name="build" size={20} color={theme.colors.error} />
               </View>
               <View style={styles.alertContent}>
                 <View style={styles.alertHeader}>
@@ -93,16 +122,16 @@ export default function DashboardScreen({ navigation }) {
             </View>
             <View style={styles.alertCardInfo}>
               <View style={styles.alertIconInfo}>
-                <MaterialIcons name="verified-user" size={20} color={theme.colors.primary} />
+                <MaterialIcons name="verified-user" size={20} color={theme.colors.onSurfaceVariant} />
               </View>
               <View style={styles.alertContent}>
                 <View style={styles.alertHeader}>
-                  <Text style={styles.alertTitle}>Expiration Assurance</Text>
+                  <Text style={styles.alertTitleInfo}>Expiration Assurance</Text>
                   <View style={styles.alertBadgeInfo}>
-                    <Text style={styles.alertBadgeTextInfo}>7 Jours</Text>
+                    <Text style={styles.alertBadgeText}>7 Jours</Text>
                   </View>
                 </View>
-                <Text style={styles.alertDesc}>BMW iX (AA-772) police #XJ889 expire le 14 oct.</Text>
+                <Text style={styles.alertDescInfo}>BMW iX (AA-772) police #XJ889 expire le 14 oct.</Text>
               </View>
             </View>
           </View>
@@ -112,69 +141,44 @@ export default function DashboardScreen({ navigation }) {
           <View style={styles.sectionHead}>
             <View style={styles.sectionTitleRow}>
               <MaterialIcons name="analytics" size={20} color={theme.colors.primary} />
-              <Text style={styles.sectionTitle}>Utilisation Flotte</Text>
+              <Text style={styles.sectionTitle}>Usage de la flotte</Text>
             </View>
           </View>
           <View style={styles.chartCard}>
-            {/* Legend */}
-            <View style={styles.legendRow}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: theme.colors.primary }]} />
-                <Text style={styles.legendLabel}>Loué</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: theme.colors.tertiaryFixedDim }]} />
-                <Text style={styles.legendLabel}>Disponible</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: theme.colors.error }]} />
-                <Text style={styles.legendLabel}>Maintenance</Text>
-              </View>
-            </View>
-            {/* Stacked Bars */}
             <View style={styles.chartBars}>
-              {[70, 65, 80, 75, 60].map((active, i) => {
-                const idle = 20 - (i % 3) * 2;
-                const repair = 100 - active - idle;
+              {chartData.map((value, i) => {
+                const barHeight = `${Math.max(8, Math.min(100, value))}%`;
                 return (
                   <View key={i} style={styles.barCol}>
-                    <View style={styles.barContainer}>
-                      <View style={[styles.barSegment, { flex: active, backgroundColor: theme.colors.primary }]} />
-                      <View style={[styles.barSegment, { flex: idle, backgroundColor: theme.colors.tertiaryFixedDim }]} />
-                      <View style={[styles.barSegment, { flex: repair, backgroundColor: theme.colors.error }]} />
+                    <View style={styles.barTrack}>
+                      <View
+                        style={[
+                          styles.barFill,
+                          { height: barHeight, opacity: 0.3 + (value / 100) * 0.7 },
+                        ]}
+                      />
                     </View>
                   </View>
                 );
               })}
             </View>
-            {/* Day labels */}
             <View style={styles.dayRow}>
-              {['MON', 'TUE', 'WED', 'THU', 'FRI'].map((d) => (
+              {WEEK_DAYS.map((d) => (
                 <Text key={d} style={styles.dayLabel}>{d}</Text>
               ))}
             </View>
+            <View style={styles.chartDivider} />
+            <View style={styles.chartFooter}>
+              <View style={styles.chartFooterItem}>
+                <Text style={styles.chartFooterLabel}>Kilométrage moyen</Text>
+                <Text style={styles.chartFooterValue}>185 320 KM</Text>
+              </View>
+              <View style={styles.chartFooterItemRight}>
+                <Text style={styles.chartFooterLabel}>Disponibilité</Text>
+                <Text style={styles.chartFooterValue}>{disponibilite.toFixed(1)}%</Text>
+              </View>
+            </View>
           </View>
-        </View>
-
-        <View style={styles.quickActionRow}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Contracts', { screen: 'ContractForm' })}>
-            <View style={styles.actionIcon}>
-              <MaterialIcons name="description" size={24} color={theme.colors.primary} />
-            </View>
-            <Text style={styles.actionText}>Nouveau Contrat</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Clients', { screen: 'ClientForm' })}>
-            <View style={styles.actionIcon}>
-              <MaterialIcons name="person-add" size={24} color={theme.colors.primary} />
-            </View>
-            <Text style={styles.actionText}>Nouveau Client</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('Vehicles', { screen: 'VehicleForm' })}>
-            <View style={styles.actionIcon}>
-              <MaterialIcons name="directions-car" size={24} color={theme.colors.primary} />
-            </View>
-            <Text style={styles.actionText}>Nouveau Véhicule</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -213,42 +217,56 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.lg,
     color: theme.colors.onSurface,
   },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(4, 83, 205, 0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: theme.borderRadius.full,
+  },
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: DESIGN_SECONDARY,
+  },
   liveLabel: {
     fontFamily: theme.fonts.headlineBold,
-    fontSize: 10,
-    color: theme.colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    fontSize: 11,
+    color: DESIGN_SECONDARY,
   },
   metricsRow: {
     flexDirection: 'row',
-    gap: 16,
-    paddingRight: 24,
+    gap: 12,
+    paddingHorizontal: 24,
   },
   metricCard: {
-    minWidth: 160,
+    flex: 1,
     backgroundColor: theme.colors.surfaceContainerLowest,
-    padding: 20,
-    borderRadius: theme.borderRadius.md,
+    padding: 14,
+    borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(197,197,211,0.1)',
+    borderColor: 'rgba(197,197,211,0.35)',
+    ...theme.shadow.card,
   },
   metricLabel: {
     fontFamily: theme.fonts.label,
-    fontSize: 10,
+    fontSize: 9,
     color: theme.colors.secondary,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
     marginBottom: 4,
   },
   metricValue: {
     fontFamily: theme.fonts.headlineBold,
-    fontSize: 30,
+    fontSize: 28,
     color: theme.colors.primary,
   },
   metricSub: {
     fontSize: 14,
-    color: 'rgba(80,95,118,0.4)',
+    color: 'rgba(80,95,118,0.45)',
     fontWeight: '400',
   },
   trendRow: {
@@ -260,7 +278,7 @@ const styles = StyleSheet.create({
   trendText: {
     fontFamily: theme.fonts.bodySemibold,
     fontSize: 11,
-    color: theme.colors.tertiaryContainer,
+    color: DESIGN_FLOET,
   },
   progressBar: {
     marginTop: 12,
@@ -277,19 +295,19 @@ const styles = StyleSheet.create({
   },
   metricCardRevenue: {
     backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primaryContainer,
+    borderColor: 'transparent',
   },
   metricLabelRevenue: {
     fontFamily: theme.fonts.label,
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.6)',
+    fontSize: 9,
+    color: 'rgba(255,255,255,0.65)',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 0.8,
     marginBottom: 4,
   },
   metricValueRevenue: {
     fontFamily: theme.fonts.headlineBold,
-    fontSize: 30,
+    fontSize: 28,
     color: '#fff',
   },
   trendTextRevenue: {
@@ -311,17 +329,17 @@ const styles = StyleSheet.create({
   },
   alertCardError: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,218,214,0.4)',
+    backgroundColor: DESIGN_ALERT_BG,
     padding: 16,
     borderRadius: theme.borderRadius.md,
-    gap: 16,
+    gap: 14,
     alignItems: 'flex-start',
   },
   alertIconError: {
     width: 40,
     height: 40,
-    borderRadius: 8,
-    backgroundColor: theme.colors.errorContainer,
+    borderRadius: 12,
+    backgroundColor: DESIGN_ALERT_ICON,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -337,7 +355,7 @@ const styles = StyleSheet.create({
   alertTitle: {
     fontFamily: theme.fonts.bodyBold,
     fontSize: 13,
-    color: theme.colors.onErrorContainer,
+    color: DESIGN_ALERT_TITLE,
   },
   alertBadge: {
     backgroundColor: theme.colors.error,
@@ -354,7 +372,7 @@ const styles = StyleSheet.create({
   alertDesc: {
     fontFamily: theme.fonts.body,
     fontSize: 12,
-    color: 'rgba(147,0,10,0.7)',
+    color: 'rgba(147,0,10,0.75)',
     lineHeight: 18,
   },
   alertCardInfo: {
@@ -362,120 +380,107 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceContainerLow,
     padding: 16,
     borderRadius: theme.borderRadius.md,
-    gap: 16,
+    gap: 14,
     alignItems: 'flex-start',
     borderWidth: 1,
-    borderColor: 'rgba(197,197,211,0.1)',
+    borderColor: 'rgba(197,197,211,0.25)',
   },
   alertIconInfo: {
     width: 40,
     height: 40,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0,35,111,0.1)',
+    borderRadius: 12,
+    backgroundColor: theme.colors.surfaceContainerHigh,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  alertTitleInfo: {
+    fontFamily: theme.fonts.bodyBold,
+    fontSize: 13,
+    color: theme.colors.onSurface,
+  },
   alertBadgeInfo: {
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: DESIGN_BADGE_DAYS,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  alertBadgeTextInfo: {
-    fontFamily: theme.fonts.headlineBold,
-    fontSize: 10,
-    color: '#fff',
-    textTransform: 'uppercase',
+  alertDescInfo: {
+    fontFamily: theme.fonts.body,
+    fontSize: 12,
+    color: theme.colors.onSurfaceVariant,
+    lineHeight: 18,
   },
   chartCard: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     marginHorizontal: 24,
     padding: 20,
-    borderRadius: 16,
+    borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(197,197,211,0.1)',
-  },
-  legendRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 24,
-    marginBottom: 16,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  legendLabel: {
-    fontFamily: theme.fonts.headlineBold,
-    fontSize: 10,
-    color: theme.colors.secondaryFixedDim,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    borderColor: 'rgba(197,197,211,0.25)',
+    ...theme.shadow.card,
   },
   chartBars: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
-    height: 128,
+    height: 112,
   },
   barCol: {
     flex: 1,
     height: '100%',
+    justifyContent: 'flex-end',
   },
-  barContainer: {
-    flex: 1,
+  barTrack: {
+    height: '100%',
     backgroundColor: theme.colors.surfaceContainerHigh,
     borderRadius: 999,
     overflow: 'hidden',
-    flexDirection: 'column-reverse',
+    justifyContent: 'flex-end',
   },
-  barSegment: {
-    borderRadius: 0,
+  barFill: {
+    width: '100%',
+    borderRadius: 999,
+    backgroundColor: theme.colors.primary,
   },
   dayRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 10,
   },
   dayLabel: {
     fontFamily: theme.fonts.bodyMedium,
-    fontSize: 10,
+    fontSize: 9,
     color: theme.colors.secondary,
   },
-  quickActionRow: {
+  chartDivider: {
+    height: 1,
+    backgroundColor: 'rgba(197,197,211,0.35)',
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  chartFooter: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    gap: 12,
+    justifyContent: 'space-between',
   },
-  actionCard: {
+  chartFooterItem: {
     flex: 1,
-    backgroundColor: theme.colors.surfaceContainerLowest,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(197,197,211,0.1)',
   },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0,35,111,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  chartFooterItemRight: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
-  actionText: {
-    fontFamily: theme.fonts.bodySemibold,
-    fontSize: 11,
+  chartFooterLabel: {
+    fontFamily: theme.fonts.label,
+    fontSize: 9,
+    color: theme.colors.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  chartFooterValue: {
+    fontFamily: theme.fonts.headlineBold,
+    fontSize: 16,
     color: theme.colors.onSurface,
-    textAlign: 'center',
   },
   fab: {
     position: 'absolute',
@@ -484,7 +489,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     backgroundColor: theme.colors.primary,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
