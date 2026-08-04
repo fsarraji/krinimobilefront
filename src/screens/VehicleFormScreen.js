@@ -88,7 +88,7 @@ export default function VehicleFormScreen({ route, navigation }) {
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
+    if (permission && !permission.granted) {
       Alert.alert('Permission requise', "Autorisez l'accès à la galerie pour choisir une photo.");
       return;
     }
@@ -146,17 +146,25 @@ export default function VehicleFormScreen({ route, navigation }) {
         annee: parseInt(form.annee) || 0,
         kilometrage: parseInt(form.kilometrage) || 0,
         prix_par_jour: parseFloat(form.prix_par_jour) || 0,
-        prochain_vidange_km: parseInt(form.prochain_vidange_km) || null,
+        prochain_vidange_km: parseInt(form.prochain_vidange_km) || 0,
         tarif_km_extra: form.tarif_km_extra ? parseFloat(form.tarif_km_extra) : null,
       };
       if (imageAsset) {
         const data = new FormData();
-        Object.keys(payload).forEach(k => data.append(k, payload[k]));
-        data.append('image', {
-          uri: imageAsset.uri,
-          name: imageAsset.fileName || `photo_${Date.now()}.jpg`,
-          type: imageAsset.mimeType || 'image/jpeg',
+        Object.keys(payload).forEach(k => {
+          const v = payload[k];
+          if (v === null || v === undefined || v === '') return;
+          data.append(k, typeof v === 'boolean' ? String(v) : v);
         });
+        if (imageAsset.file && Platform.OS === 'web') {
+          data.append('image', imageAsset.file, imageAsset.file.name || `photo_${Date.now()}.jpg`);
+        } else {
+          data.append('image', {
+            uri: imageAsset.uri,
+            name: imageAsset.fileName || `photo_${Date.now()}.jpg`,
+            type: imageAsset.mimeType || 'image/jpeg',
+          });
+        }
         if (isEdit) await api.patch(`vehicles/${vehicleId}/`, data);
         else await api.post('vehicles/', data);
       } else {
@@ -165,7 +173,20 @@ export default function VehicleFormScreen({ route, navigation }) {
       }
       navigation.goBack();
     } catch (e) {
-      Alert.alert('Erreur', e.response?.data?.detail || 'Erreur lors de la sauvegarde');
+      let message = 'Erreur lors de la sauvegarde';
+      const data = e.response?.data;
+      if (data) {
+        if (typeof data === 'string') message = data;
+        else if (data.detail) message = data.detail;
+        else {
+          const fieldErrors = Object.entries(data)
+            .filter(([, errs]) => Array.isArray(errs) || typeof errs === 'string')
+            .map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(', ') : errs}`)
+            .join('\n');
+          if (fieldErrors) message = fieldErrors;
+        }
+      }
+      Alert.alert('Erreur', message);
     } finally {
       setSaving(false);
     }
