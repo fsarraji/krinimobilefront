@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, Platform, Animated, useRef, useEffect } from 'react-native';
+import { useRef, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity, Platform, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
