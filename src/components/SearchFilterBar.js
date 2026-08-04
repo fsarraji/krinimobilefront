@@ -13,7 +13,7 @@ export default function SearchFilterBar({ placeholder, search, onSearchChange, o
   };
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, open && styles.wrapOpen]}>
       <View style={styles.row}>
         <View style={styles.searchBox}>
           <MaterialIcons name="search" size={20} color={theme.colors.onSurfaceVariant} />
@@ -49,7 +49,7 @@ export default function SearchFilterBar({ placeholder, search, onSearchChange, o
             </TouchableOpacity>
             {open && (
               <>
-                <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setOpen(false)} />
+                <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setOpen(false)} />
                 <View style={styles.menu}>
                   {options.map((opt) => (
                     <TouchableOpacity
@@ -76,8 +76,13 @@ export default function SearchFilterBar({ placeholder, search, onSearchChange, o
 
 const styles = StyleSheet.create({
   wrap: {
+    position: 'relative',
     paddingHorizontal: theme.spacing.md,
     marginBottom: theme.spacing.sm,
+  },
+  wrapOpen: {
+    zIndex: 1000,
+    elevation: 20,
   },
   row: {
     flexDirection: 'row',
@@ -106,6 +111,7 @@ const styles = StyleSheet.create({
   },
   filterWrap: {
     position: 'relative',
+    zIndex: 1,
   },
   filterButton: {
     flexDirection: 'row',
@@ -118,7 +124,16 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.outlineVariant,
     borderRadius: theme.borderRadius.md,
     maxWidth: 150,
+    zIndex: 2,
     ...theme.shadow.card,
+  },
+  overlay: {
+    position: 'absolute',
+    top: -600,
+    left: -600,
+    right: -600,
+    bottom: -600,
+    zIndex: 1,
   },
   dot: {
     width: 8,
@@ -141,7 +156,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(197,197,211,0.35)',
     paddingVertical: 6,
-    zIndex: 10,
+    zIndex: 3,
     elevation: 12,
     ...theme.shadow.editorial,
   },
