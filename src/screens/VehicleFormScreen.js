@@ -7,6 +7,68 @@ import { MaterialIcons } from '@expo/vector-icons';
 import DateField from '../components/DateField';
 import { resolveMediaUrl } from '../apiUrl';
 
+function Label({ required, children }) {
+  return (
+    <Text style={styles.label}>
+      {children}
+      {required ? <Text style={styles.labelRequired}> *</Text> : null}
+    </Text>
+  );
+}
+
+function IconInput({ icon, ...props }) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={[styles.inputWrap, focused && styles.inputWrapFocused]}>
+      <MaterialIcons name={icon} size={18} color={theme.colors.outline} />
+      <TextInput
+        style={styles.input}
+        placeholderTextColor={theme.colors.onSurfaceVariant}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        {...props}
+      />
+    </View>
+  );
+}
+
+function SelectField({ icon, placeholder, value, options, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => String(o.value) === String(value));
+  return (
+    <View>
+      <TouchableOpacity style={styles.selectBox} onPress={() => setOpen((o) => !o)} activeOpacity={0.8}>
+        <MaterialIcons name={icon} size={18} color={theme.colors.outline} />
+        <Text style={[styles.selectValue, !selected && styles.selectPlaceholder]} numberOfLines={1}>
+          {selected ? selected.label : placeholder}
+        </Text>
+        <MaterialIcons name="expand-more" size={20} color={theme.colors.outline} />
+      </TouchableOpacity>
+      {open && (
+        <View style={styles.optionsRow}>
+          {options.map((o) => (
+            <TouchableChoice
+              key={String(o.value)}
+              label={o.label}
+              selected={String(value) === String(o.value)}
+              onPress={() => { onSelect(o.value); setOpen(false); }}
+            />
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function SectionTitle({ icon, children }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <MaterialIcons name={icon} size={18} color={theme.colors.secondary} />
+      <Text style={styles.sectionTitle}>{children}</Text>
+    </View>
+  );
+}
+
 export default function VehicleFormScreen({ route, navigation }) {
   const vehicleId = route.params?.id;
   const isEdit = !!vehicleId;
@@ -114,99 +176,109 @@ export default function VehicleFormScreen({ route, navigation }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="directions-car" size={24} color={theme.colors.onSurface} />
-          <Text style={{ fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.xl, color: theme.colors.onSurface }}>Ajouter un Véhicule</Text>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>{isEdit ? 'Modifier le véhicule' : 'Nouveau véhicule'}</Text>
+          <Text style={styles.pageSubtitle}>Ajoutez les informations du véhicule</Text>
         </View>
 
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="fingerprint" size={20} color={theme.colors.onSurface} />
-          <Text style={styles.sectionTitle}>Identification</Text>
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="photo-camera" size={20} color={theme.colors.onSurface} />
-          <Text style={styles.sectionTitle}>Photo du véhicule</Text>
-        </View>
-        <TouchableOpacity style={styles.imagePicker} onPress={pickImage} activeOpacity={0.8}>
-          {(imageAsset?.uri || (isEdit && existingImage)) ? (
-            <Image source={{ uri: imageAsset?.uri || resolveMediaUrl(existingImage) }} style={styles.imagePreview} resizeMode="cover" />
-          ) : (
-            <View style={styles.imagePlaceholder}>
-              <MaterialIcons name="add-a-photo" size={32} color={theme.colors.onSurfaceVariant} />
-              <Text style={styles.imageHint}>Ajouter une photo</Text>
+        <View style={styles.card}>
+          <SectionTitle icon="photo-camera">Photo du véhicule</SectionTitle>
+          <TouchableOpacity style={styles.imagePicker} onPress={pickImage} activeOpacity={0.8}>
+            {(imageAsset?.uri || (isEdit && existingImage)) ? (
+              <Image source={{ uri: imageAsset?.uri || resolveMediaUrl(existingImage) }} style={styles.imagePreview} resizeMode="cover" />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <MaterialIcons name="add-a-photo" size={32} color={theme.colors.onSurfaceVariant} />
+                <Text style={styles.imageHint}>Ajouter une photo</Text>
+              </View>
+            )}
+            <View style={styles.imageOverlay}>
+              <Text style={styles.imageOverlayText}>{imageAsset || (isEdit && existingImage) ? 'Changer la photo' : 'Choisir une photo'}</Text>
             </View>
-          )}
-          <View style={styles.imageOverlay}>
-            <Text style={styles.imageOverlayText}>{imageAsset || (isEdit && existingImage) ? 'Changer la photo' : 'Choisir une photo'}</Text>
+          </TouchableOpacity>
+
+          <View style={styles.section}>
+            <SectionTitle icon="badge">Informations principales</SectionTitle>
+            <View style={styles.field}>
+              <Label required>Matricule</Label>
+              <IconInput icon="badge" value={form.matricule} onChangeText={v => setForm(f => ({ ...f, matricule: v }))} placeholder="Ex: 48744-A-49" autoCapitalize="characters" />
+            </View>
+            <View style={styles.field}>
+              <Label required>Marque</Label>
+              <SelectField icon="directions-car" placeholder="Sélectionner la marque" value={form.marque} options={brands.map(b => ({ value: b.id, label: b.name }))} onSelect={handleBrandChange} />
+            </View>
+            <View style={styles.field}>
+              <Label required>Modèle</Label>
+              <SelectField icon="directions-car" placeholder="Sélectionner le modèle" value={form.modele} options={models.map(m => ({ value: m.id, label: m.name }))} onSelect={(v) => setForm(f => ({ ...f, modele: v }))} />
+            </View>
+            <View style={styles.fieldRow}>
+              <View style={styles.fieldHalf}>
+                <Label>Année</Label>
+                <IconInput icon="calendar-today" value={form.annee} onChangeText={v => setForm(f => ({ ...f, annee: v }))} keyboardType="numeric" placeholder="Ex: 2020" />
+              </View>
+              <View style={styles.fieldHalf}>
+                <Label>Couleur</Label>
+                <IconInput icon="palette" value={form.couleur} onChangeText={v => setForm(f => ({ ...f, couleur: v }))} placeholder="Ex: Rouge" />
+              </View>
+            </View>
           </View>
-        </TouchableOpacity>
 
-        <Text style={styles.label}>Matricule *</Text>
-        <TextInput style={styles.input} value={form.matricule} onChangeText={v => setForm(f => ({ ...f, matricule: v }))} placeholder="Ex: 1234 Tunisia 5" placeholderTextColor={theme.colors.onSurfaceVariant} />
-
-        <Text style={styles.label}>Marque *</Text>
-        <View style={styles.optionsRow}>
-          {brands.map(b => (
-            <TouchableChoice key={b.id} label={b.name} selected={form.marque == b.id} onPress={() => handleBrandChange(b.id)} />
-          ))}
-        </View>
-
-        {models.length > 0 && (
-          <>
-            <Text style={styles.label}>Modèle *</Text>
-            <View style={styles.optionsRow}>
-              {models.map(m => (
-                <TouchableChoice key={m.id} label={m.name} selected={form.modele == m.id} onPress={() => setForm(f => ({ ...f, modele: m.id }))} />
-              ))}
+          <View style={styles.section}>
+            <SectionTitle icon="tune">Détails techniques</SectionTitle>
+            <View style={styles.field}>
+              <Label required>Kilométrage (km)</Label>
+              <IconInput icon="speed" value={form.kilometrage} onChangeText={v => setForm(f => ({ ...f, kilometrage: v }))} keyboardType="numeric" placeholder="Ex: 50000" />
             </View>
-          </>
-        )}
+            <View style={styles.field}>
+              <Label>Type de carburant</Label>
+              <SelectField icon="local-gas-station" placeholder="Sélectionner le type" value={form.carburant} options={['Diesel', 'Essence', 'Hybride', 'Électrique'].map(c => ({ value: c, label: c }))} onSelect={(v) => setForm(f => ({ ...f, carburant: v }))} />
+            </View>
+            <View style={styles.fieldRow}>
+              <View style={styles.fieldHalf}>
+                <Label>Prochain vidange (km)</Label>
+                <IconInput icon="build" value={form.prochain_vidange_km} onChangeText={v => setForm(f => ({ ...f, prochain_vidange_km: v }))} keyboardType="numeric" placeholder="Ex: 10000" />
+              </View>
+              <View style={styles.fieldHalf}>
+                <Label>Tarif km extra</Label>
+                <IconInput icon="add-road" value={form.tarif_km_extra} onChangeText={v => setForm(f => ({ ...f, tarif_km_extra: v }))} keyboardType="decimal-pad" placeholder="Ex: 2.00" />
+              </View>
+            </View>
+          </View>
 
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="settings-input-component" size={20} color={theme.colors.onSurface} />
-          <Text style={{ fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface }}>Spécifications</Text>
+          <View style={styles.section}>
+            <SectionTitle icon="sell">Informations financières</SectionTitle>
+            <View style={styles.field}>
+              <Label required>Prix de location / jour (DH)</Label>
+              <IconInput icon="sell" value={form.prix_par_jour} onChangeText={v => setForm(f => ({ ...f, prix_par_jour: v }))} keyboardType="numeric" placeholder="Ex: 370.00" />
+            </View>
+            <View style={styles.field}>
+              <Label>Statut</Label>
+              <SelectField icon="task-alt" placeholder="Sélectionner le statut" value={form.statut} options={[{ value: 'Available', label: 'Disponible' }, { value: 'Rented', label: 'Loué' }, { value: 'Maintenance', label: 'Maintenance' }]} onSelect={(v) => setForm(f => ({ ...f, statut: v }))} />
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <SectionTitle icon="verified-user">Validité</SectionTitle>
+            <DateField label="Date d'assurance" value={form.date_assurance} onChange={v => setForm(f => ({ ...f, date_assurance: v }))} />
+            <DateField label="Date de visite technique" value={form.date_visite_technique} onChange={v => setForm(f => ({ ...f, date_visite_technique: v }))} />
+          </View>
+
+          <View style={styles.actions}>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()} activeOpacity={0.8}>
+              <Text style={styles.cancelText}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving} activeOpacity={0.9}>
+              {saving ? (
+                <ActivityIndicator color={theme.colors.onPrimary} />
+              ) : (
+                <>
+                  <MaterialIcons name="save" size={18} color={theme.colors.onPrimary} />
+                  <Text style={styles.saveText}>{isEdit ? 'Mettre à jour' : 'Enregistrer'}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-        <Text style={styles.label}>Année</Text>
-        <TextInput style={styles.input} value={form.annee} onChangeText={v => setForm(f => ({ ...f, annee: v }))} keyboardType="numeric" placeholder="Ex: 2020" placeholderTextColor={theme.colors.onSurfaceVariant} />
-
-        <Text style={styles.label}>Couleur</Text>
-        <TextInput style={styles.input} value={form.couleur} onChangeText={v => setForm(f => ({ ...f, couleur: v }))} placeholder="Ex: Rouge" placeholderTextColor={theme.colors.onSurfaceVariant} />
-
-        <Text style={styles.label}>Carburant</Text>
-        <View style={styles.optionsRow}>
-          {['Diesel', 'Essence', 'Hybride', 'Electrique'].map(f => (
-            <TouchableChoice key={f} label={f} selected={form.carburant === f} onPress={() => setForm(fo => ({ ...fo, carburant: f }))} />
-          ))}
-        </View>
-
-        <Text style={styles.label}>Kilométrage</Text>
-        <TextInput style={styles.input} value={form.kilometrage} onChangeText={v => setForm(f => ({ ...f, kilometrage: v }))} keyboardType="numeric" placeholder="Ex: 50000" placeholderTextColor={theme.colors.onSurfaceVariant} />
-
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="payments" size={20} color={theme.colors.onSurface} />
-          <Text style={{ fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface }}>Tarification</Text>
-        </View>
-        <Text style={styles.label}>Prix par jour (DH)</Text>
-        <TextInput style={styles.input} value={form.prix_par_jour} onChangeText={v => setForm(f => ({ ...f, prix_par_jour: v }))} keyboardType="numeric" placeholder="Ex: 200" placeholderTextColor={theme.colors.onSurfaceVariant} />
-
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="verified-user" size={20} color={theme.colors.onSurface} />
-          <Text style={{ fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface }}>Validité</Text>
-        </View>
-        <Text style={styles.label}>Statut</Text>
-        <View style={styles.optionsRow}>
-          {['Available', 'Rented', 'Maintenance'].map(s => (
-            <TouchableChoice key={s} label={{Available: 'Disponible', Rented: 'Loué', Maintenance: 'Maintenance'}[s]} selected={form.statut === s} onPress={() => setForm(f => ({ ...f, statut: s }))} />
-          ))}
-        </View>
-
-        <DateField label="Date d'assurance" value={form.date_assurance} onChange={v => setForm(f => ({ ...f, date_assurance: v }))} />
-        <DateField label="Date de visite technique" value={form.date_visite_technique} onChange={v => setForm(f => ({ ...f, date_visite_technique: v }))} />
-
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator color={theme.colors.onPrimary} /> : <Text style={styles.saveText}>{isEdit ? 'Mettre à jour' : 'Enregistrer le Véhicule'}</Text>}
-        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -222,20 +294,80 @@ function TouchableChoice({ label, selected, onPress }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
-  label: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.md, color: theme.colors.onSurface, marginBottom: theme.spacing.xs, marginTop: theme.spacing.md },
-  sectionTitle: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface },
+  content: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl * 2 },
+  pageHeader: { paddingTop: theme.spacing.sm, paddingBottom: theme.spacing.md },
+  pageTitle: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.title, color: theme.colors.primary, letterSpacing: -0.5 },
+  pageSubtitle: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginTop: 2 },
+  card: {
+    backgroundColor: theme.colors.surfaceContainerLowest,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
+    padding: theme.spacing.lg,
+    ...theme.shadow.card,
+  },
+  section: { marginTop: theme.spacing.lg },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, marginBottom: theme.spacing.md },
+  sectionTitle: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.lg, color: theme.colors.onSurface },
+  field: { marginBottom: theme.spacing.md },
+  fieldRow: { flexDirection: 'row', gap: theme.spacing.md },
+  fieldHalf: { flex: 1 },
+  label: { fontFamily: theme.fonts.bodyMedium, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginBottom: theme.spacing.xs },
+  labelRequired: { color: theme.colors.error },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
+    borderRadius: theme.borderRadius.sm,
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: 'transparent',
+  },
+  inputWrapFocused: { borderColor: theme.colors.primaryContainer, borderWidth: 1.5 },
+  input: {
+    flex: 1,
+    paddingVertical: 10,
+    fontSize: theme.fontSize.md,
+    fontFamily: theme.fonts.body,
+    color: theme.colors.onSurface,
+  },
+  selectBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
+    borderRadius: theme.borderRadius.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
+  },
+  selectValue: { flex: 1, fontSize: theme.fontSize.md, fontFamily: theme.fonts.body, color: theme.colors.onSurface },
+  selectPlaceholder: { color: theme.colors.onSurfaceVariant },
+  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, marginTop: theme.spacing.sm },
+  choice: {
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
+    backgroundColor: theme.colors.surfaceContainerLowest,
+  },
+  choiceSelected: { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.secondary },
+  choiceText: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
+  choiceTextSelected: { color: theme.colors.secondary, fontFamily: theme.fonts.bodySemibold },
   imagePicker: {
     width: '100%',
     height: 180,
     borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surfaceContainerLowest,
+    backgroundColor: theme.colors.surfaceContainerLow,
     borderWidth: 1,
     borderColor: theme.colors.outlineVariant,
+    borderStyle: 'dashed',
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: theme.spacing.xs,
   },
   imagePreview: { width: '100%', height: 180 },
   imagePlaceholder: { alignItems: 'center', gap: 8 },
@@ -250,21 +382,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   imageOverlayText: { color: '#fff', fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.xs },
-  sectionHeader: {
+  actions: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.lg,
+    paddingTop: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.outlineVariant,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
+    backgroundColor: theme.colors.surfaceContainerLowest,
+  },
+  cancelText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurface },
+  saveButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f3f5',
-    paddingBottom: 12,
-    marginBottom: 16,
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    paddingVertical: 14,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.primaryContainer,
   },
-  input: { backgroundColor: theme.colors.surfaceContainerLowest, borderWidth: 1, borderColor: '#dadce0', borderRadius: theme.borderRadius.sm, padding: theme.spacing.md, fontSize: theme.fontSize.md, fontFamily: theme.fonts.body, color: theme.colors.onSurface },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
-  choice: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
-  choiceSelected: { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary },
-  choiceText: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
-  choiceTextSelected: { color: theme.colors.primary, fontFamily: theme.fonts.bodyMedium },
-  saveButton: { backgroundColor: theme.colors.primary, borderRadius: theme.borderRadius.md, padding: theme.spacing.md, alignItems: 'center', marginTop: theme.spacing.lg },
-  saveText: { color: theme.colors.onPrimary, fontSize: theme.fontSize.lg, fontFamily: theme.fonts.bodySemibold },
+  saveText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onPrimary },
 });
