@@ -4,13 +4,18 @@ import { MaterialIcons } from '@expo/vector-icons';
 import api from '../api';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
-import SearchBar from '../components/SearchBar';
+import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 
 function getInitials(prenom, nom) {
   return ((prenom?.charAt(0) || '') + (nom?.charAt(0) || '')).toUpperCase() || '?';
 }
+
+const clientOptions = [
+  { value: false, label: 'Tous', dotColor: theme.colors.primary },
+  { value: true, label: 'Liste noire', dotColor: theme.colors.error },
+];
 
 export default function ClientsScreen({ navigation }) {
   const [search, setSearch] = useState('');
@@ -54,21 +59,7 @@ export default function ClientsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (nom, prénom, CIN, téléphone)..." />
-      <View style={styles.filterRow}>
-        <TouchableOpacity
-          style={[styles.filterPill, !blacklisted && styles.filterPillActive]}
-          onPress={() => setBlacklisted(false)}
-        >
-          <Text style={[styles.filterText, !blacklisted && styles.filterTextActive]}>Tous</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.filterPill, blacklisted && styles.filterPillActive]}
-          onPress={() => setBlacklisted(true)}
-        >
-          <Text style={[styles.filterText, blacklisted && styles.filterTextActive]}>Liste noire</Text>
-        </TouchableOpacity>
-      </View>
+      <SearchFilterBar placeholder="Rechercher (nom, prénom, CIN, téléphone)..." search={search} onSearchChange={setSearch} options={clientOptions} filter={blacklisted} onFilterChange={setBlacklisted} />
       <FlatList
         data={clients}
         keyExtractor={(item) => String(item.id)}
@@ -90,11 +81,6 @@ export default function ClientsScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
-  filterRow: { flexDirection: 'row', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
-  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
-  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
-  filterTextActive: { color: theme.colors.onPrimary },
   footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,

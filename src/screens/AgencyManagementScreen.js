@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, RefreshControl, ScrollView, Switch } from 'react-native';
 import api from '../api';
 import theme from '../theme';
-import SearchBar from '../components/SearchBar';
+import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 
@@ -87,7 +87,7 @@ export default function AgencyManagementScreen() {
 
   return (
     <View style={styles.container}>
-      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (nom, email, téléphone)..." />
+      <SearchFilterBar placeholder="Rechercher (nom, email, téléphone)..." search={search} onSearchChange={setSearch} />
       <FlatList data={agencies} keyExtractor={(item) => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />} onEndReached={loadMore} onEndReachedThreshold={0.3} ListEmptyComponent={loading ? null : <Text style={styles.empty}>Aucune agence</Text>} ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />} />
       <TouchableOpacity style={styles.fab} onPress={() => { setEditing(null); setForm({ nom_agence: '', adresse: '', telephone: '', email: '', rc: '', ice: '', is_active: true }); setShowForm(true); }}>
         <Text style={styles.fabText}>+</Text>

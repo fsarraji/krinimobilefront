@@ -4,12 +4,17 @@ import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
-import SearchBar from '../components/SearchBar';
+import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import DateField from '../components/DateField';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 
 const categories = ['Maintenance', 'Fuel', 'Salaires', 'Loyer', 'Utilities', 'Taxes', 'Autre'];
+
+const categoryOptions = [
+  { value: '', label: 'Toutes', dotColor: theme.colors.primary },
+  ...categories.map((c) => ({ value: c, label: c, dotColor: theme.colors.onSurfaceVariant })),
+];
 
 export default function ExpensesScreen() {
   const [search, setSearch] = useState('');
@@ -117,24 +122,7 @@ export default function ExpensesScreen() {
         </ScrollView>
       ) : (
         <>
-          <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (titre, notes)..." />
-          <View style={styles.filterRow}>
-            <TouchableOpacity
-              style={[styles.filterPill, !category && styles.filterPillActive]}
-              onPress={() => setCategory('')}
-            >
-              <Text style={[styles.filterText, !category && styles.filterTextActive]}>Toutes</Text>
-            </TouchableOpacity>
-            {categories.map((c) => (
-              <TouchableOpacity
-                key={c}
-                style={[styles.filterPill, category === c && styles.filterPillActive]}
-                onPress={() => setCategory(category === c ? '' : c)}
-              >
-                <Text style={[styles.filterText, category === c && styles.filterTextActive]}>{c}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <SearchFilterBar placeholder="Rechercher (titre, notes)..." search={search} onSearchChange={setSearch} options={categoryOptions} filter={category} onFilterChange={setCategory} />
           <FlatList
             data={expenses}
             keyExtractor={(item) => String(item.id)}
@@ -158,11 +146,6 @@ export default function ExpensesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
-  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
-  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
-  filterTextActive: { color: theme.colors.onPrimary },
   footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,

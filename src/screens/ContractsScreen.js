@@ -5,7 +5,7 @@ import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { printContract } from '../printUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
-import SearchBar from '../components/SearchBar';
+import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 
@@ -31,11 +31,11 @@ const statusLabels = {
 };
 
 const statusOptions = [
-  { value: '', label: 'Tous' },
-  { value: 'RESERVE', label: 'Réservation' },
-  { value: 'EN_COURS', label: 'En cours' },
-  { value: 'TERMINE', label: 'Terminé' },
-  { value: 'ANNULE', label: 'Annulé' },
+  { value: '', label: 'Tous', dotColor: theme.colors.primary },
+  { value: 'RESERVE', label: 'Réservation', dotColor: theme.colors.primary },
+  { value: 'EN_COURS', label: 'En cours', dotColor: '#e65100' },
+  { value: 'TERMINE', label: 'Terminé', dotColor: '#2e7d32' },
+  { value: 'ANNULE', label: 'Annulé', dotColor: '#c62828' },
 ];
 
 export default function ContractsScreen({ navigation }) {
@@ -87,18 +87,7 @@ export default function ContractsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (client, matricule, marque)..." />
-      <View style={styles.filterRow}>
-        {statusOptions.map((opt) => (
-          <TouchableOpacity
-            key={opt.value || 'all'}
-            style={[styles.filterPill, statut === opt.value && styles.filterPillActive]}
-            onPress={() => setStatut(opt.value)}
-          >
-            <Text style={[styles.filterText, statut === opt.value && styles.filterTextActive]}>{opt.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <SearchFilterBar placeholder="Rechercher (client, matricule, marque)..." search={search} onSearchChange={setSearch} options={statusOptions} filter={statut} onFilterChange={setStatut} />
       <FlatList
         data={contracts}
         keyExtractor={(item) => String(item.id)}
@@ -133,11 +122,6 @@ const styles = StyleSheet.create({
   },
   overlayText: { color: '#fff', marginTop: theme.spacing.md, fontFamily: theme.fonts.bodyMedium, fontSize: theme.fontSize.md },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
-  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
-  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
-  filterTextActive: { color: theme.colors.onPrimary },
   footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,

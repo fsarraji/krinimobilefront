@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, RefreshControl, ScrollView, Switch } from 'react-native';
 import api from '../api';
 import theme from '../theme';
-import SearchBar from '../components/SearchBar';
+import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 
@@ -11,6 +11,13 @@ const roleColors = {
   OWNER: { bg: '#e8f5e9', text: '#2e7d32' },
   EMPLOYEE: { bg: theme.colors.primaryLight, text: theme.colors.primary },
 };
+
+const roleOptions = [
+  { value: '', label: 'Tous', dotColor: theme.colors.primary },
+  { value: 'SUPERADMIN', label: 'Superadmin', dotColor: theme.colors.error },
+  { value: 'OWNER', label: 'Owner', dotColor: '#2e7d32' },
+  { value: 'EMPLOYEE', label: 'Employé', dotColor: theme.colors.primary },
+];
 
 export default function UserManagementScreen() {
   const [search, setSearch] = useState('');
@@ -132,14 +139,7 @@ export default function UserManagementScreen() {
 
   return (
     <View style={styles.container}>
-      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (nom, email)..." />
-      <View style={styles.filterRow}>
-        {[['', 'Tous'], ['SUPERADMIN', 'Superadmin'], ['OWNER', 'Owner'], ['EMPLOYEE', 'Employé']].map(([val, label]) => (
-          <TouchableOpacity key={val || 'all'} style={[styles.filterPill, role === val && styles.filterPillActive]} onPress={() => setRole(val)}>
-            <Text style={[styles.filterText, role === val && styles.filterTextActive]}>{label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <SearchFilterBar placeholder="Rechercher (nom, email)..." search={search} onSearchChange={setSearch} options={roleOptions} filter={role} onFilterChange={setRole} />
       <FlatList data={users} keyExtractor={(item) => String(item.id)} renderItem={renderItem} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />} onEndReached={loadMore} onEndReachedThreshold={0.3} ListEmptyComponent={loading ? null : <Text style={styles.empty}>Aucun utilisateur</Text>} ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />} />
       <TouchableOpacity style={styles.fab} onPress={() => { setEditing(null); setForm({ username: '', email: '', first_name: '', last_name: '', role: 'EMPLOYEE', agency: '', password: '', is_active: true }); setShowForm(true); }}>
         <Text style={styles.fabText}>+</Text>
@@ -151,11 +151,6 @@ export default function UserManagementScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
-  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
-  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
-  filterTextActive: { color: theme.colors.onPrimary },
   footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,

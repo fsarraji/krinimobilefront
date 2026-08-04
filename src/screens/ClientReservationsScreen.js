@@ -3,7 +3,7 @@ import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, 
 import { MaterialIcons } from '@expo/vector-icons';
 import api from '../api';
 import theme from '../theme';
-import SearchBar from '../components/SearchBar';
+import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 
@@ -14,10 +14,10 @@ const STATUS_META = {
 };
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'Toutes' },
-  { value: 'PENDING', label: 'En attente' },
-  { value: 'CONFIRMED', label: 'Confirmées' },
-  { value: 'CANCELLED', label: 'Annulées' },
+  { value: '', label: 'Toutes', dotColor: theme.colors.primary },
+  { value: 'PENDING', label: 'En attente', dotColor: theme.colors.warning },
+  { value: 'CONFIRMED', label: 'Confirmées', dotColor: theme.colors.success },
+  { value: 'CANCELLED', label: 'Annulées', dotColor: theme.colors.error },
 ];
 
 export default function ClientReservationsScreen({ navigation }) {
@@ -132,18 +132,7 @@ export default function ClientReservationsScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (véhicule, dates)..." />
-      <View style={styles.filterRow}>
-        {STATUS_OPTIONS.map((opt) => (
-          <TouchableOpacity
-            key={opt.value || 'all'}
-            style={[styles.filterPill, statut === opt.value && styles.filterPillActive]}
-            onPress={() => setStatut(opt.value)}
-          >
-            <Text style={[styles.filterText, statut === opt.value && styles.filterTextActive]}>{opt.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <SearchFilterBar placeholder="Rechercher (véhicule, dates)..." search={search} onSearchChange={setSearch} options={STATUS_OPTIONS} filter={statut} onFilterChange={setStatut} />
       <FlatList
         data={reservations}
         keyExtractor={(item) => String(item.id)}
@@ -173,11 +162,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
-  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
-  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
-  filterTextActive: { color: theme.colors.onPrimary },
   footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,

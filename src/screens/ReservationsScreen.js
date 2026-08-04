@@ -5,7 +5,7 @@ import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { printReservationReceipt } from '../printUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
-import SearchBar from '../components/SearchBar';
+import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 import { Alert } from '../utils/alert';
@@ -17,11 +17,36 @@ const REQUEST_STATUS_META = {
   CANCELLED: { label: 'Annulée', color: theme.colors.error },
 };
 
+const requestOptions = [
+  { value: '', label: 'Tous', dotColor: theme.colors.primary },
+  { value: 'PENDING', label: 'En attente', dotColor: theme.colors.warning },
+  { value: 'CONFIRMED', label: 'Confirmée', dotColor: theme.colors.success },
+  { value: 'CANCELLED', label: 'Annulée', dotColor: theme.colors.error },
+];
+
+const reservationOptions = [
+  { value: '', label: 'Tous', dotColor: theme.colors.primary },
+  { value: 'paid', label: 'Payée', dotColor: theme.colors.success },
+  { value: 'partial', label: 'Partielle', dotColor: theme.colors.warning },
+  { value: 'unpaid', label: 'Non payée', dotColor: theme.colors.error },
+];
+
+function paymentStatus(item) {
+  const paid = parseFloat(item.montant_paye ?? item.paiement_total ?? 0) || 0;
+  const totalAmt = parseFloat(item.montant_total ?? item.total ?? 0) || 0;
+  if (!totalAmt) return paid > 0 ? 'paid' : 'unpaid';
+  if (paid >= totalAmt) return 'paid';
+  return paid > 0 ? 'partial' : 'unpaid';
+}
+
 export default function ReservationsScreen({ navigation }) {
   const [tab, setTab] = useState('demandes');
   const [search, setSearch] = useState('');
+  const [reqFilter, setReqFilter] = useState('');
+  const [resFilter, setResFilter] = useState('');
   const baseUrl = tab === 'demandes' ? 'reservations/' : 'contracts/?statut=RESERVE';
-  const { items, loading, refreshing, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList(baseUrl, { search });
+  const { items, loading, refreshing, loadingMore, page, total, totalPages, loadMore, refresh, goToPage } = usePaginatedList(baseUrl, { search, filters: tab === 'demandes' ? { statut: reqFilter || undefined } : {} });
+  const visible = tab === 'agence' && resFilter ? items.filter((i) => paymentStatus(i) === resFilter) : items;
   const [activating, setActivating] = useState(null);
   const [updating, setUpdating] = useState(null);
   const [printingId, setPrintingId] = useState(null);
@@ -156,9 +181,16 @@ export default function ReservationsScreen({ navigation }) {
           <Text style={[styles.tabText, tab === 'agence' && styles.tabTextActive]}>Réservations</Text>
         </TouchableOpacity>
       </View>
-      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (client, matricule, marque)..." />
+      <SearchFilterBar
+        placeholder="Rechercher (client, matricule, marque)..."
+        search={search}
+        onSearchChange={setSearch}
+        options={tab === 'demandes' ? requestOptions : reservationOptions}
+        filter={tab === 'demandes' ? reqFilter : resFilter}
+        onFilterChange={tab === 'demandes' ? setReqFilter : setResFilter}
+      />
       <FlatList
-        data={items}
+        data={visible}
         keyExtractor={(item) => String(item.id)}
         renderItem={tab === 'demandes' ? renderRequest : renderItem}
         contentContainerStyle={styles.list}

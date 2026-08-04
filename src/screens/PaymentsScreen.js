@@ -2,15 +2,23 @@ import { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
-import SearchBar from '../components/SearchBar';
+import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 
 export default function PaymentsScreen() {
   const [search, setSearch] = useState('');
+  const [method, setMethod] = useState('');
   const { items, loading, refreshing, loadingMore, page, total: totalCount, totalPages, loadMore, refresh, goToPage } = usePaginatedList('payments/', { search });
   const payments = items;
-  const total = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+  const methods = [...new Set(payments.map((p) => p.payment_method).filter(Boolean))];
+  const methodOptions = [
+    { value: '', label: 'Toutes', dotColor: theme.colors.primary },
+    ...methods.map((m) => ({ value: m, label: m, dotColor: theme.colors.onSurfaceVariant })),
+  ];
+  const visible = method ? payments.filter((p) => p.payment_method === method) : payments;
+  const visibleTotal = visible.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
@@ -31,11 +39,11 @@ export default function PaymentsScreen() {
     <View style={styles.container}>
       <View style={styles.totalBar}>
         <Text style={styles.totalLabel}>Total collecté (affiché)</Text>
-        <Text style={styles.totalAmount}>{total.toLocaleString()} DH</Text>
+        <Text style={styles.totalAmount}>{visibleTotal.toLocaleString()} DH</Text>
       </View>
-      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (référence, notes)..." />
+      <SearchFilterBar placeholder="Rechercher (référence, notes)..." search={search} onSearchChange={setSearch} options={methodOptions} filter={method} onFilterChange={setMethod} />
       <FlatList
-        data={payments}
+        data={visible}
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         contentContainerStyle={styles.list}

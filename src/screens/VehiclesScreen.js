@@ -4,7 +4,7 @@ import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
-import SearchBar from '../components/SearchBar';
+import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
 
@@ -27,10 +27,10 @@ const statusLabels = {
 };
 
 const statusOptions = [
-  { value: '', label: 'Tous' },
-  { value: 'Available', label: 'Disponible' },
-  { value: 'Rented', label: 'Loué' },
-  { value: 'Maintenance', label: 'Maintenance' },
+  { value: '', label: 'Tous', dotColor: theme.colors.primary },
+  { value: 'Available', label: 'Disponible', dotColor: '#10b981' },
+  { value: 'Rented', label: 'Loué', dotColor: '#ef4444' },
+  { value: 'Maintenance', label: 'Maintenance', dotColor: '#f59e0b' },
 ];
 
 export default function VehiclesScreen({ navigation }) {
@@ -72,18 +72,7 @@ export default function VehiclesScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <SearchBar value={search} onChange={setSearch} placeholder="Rechercher (matricule, marque, modèle)..." />
-      <View style={styles.filterRow}>
-        {statusOptions.map((opt) => (
-          <TouchableOpacity
-            key={opt.value || 'all'}
-            style={[styles.filterPill, statut === opt.value && styles.filterPillActive]}
-            onPress={() => setStatut(opt.value)}
-          >
-            <Text style={[styles.filterText, statut === opt.value && styles.filterTextActive]}>{opt.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <SearchFilterBar placeholder="Rechercher (matricule, marque, modèle)..." search={search} onSearchChange={setSearch} options={statusOptions} filter={statut} onFilterChange={setStatut} />
       <FlatList data={vehicles} keyExtractor={(item) => String(item.id)} renderItem={renderVehicle} contentContainerStyle={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={theme.colors.primary} />} onEndReached={loadMore} onEndReachedThreshold={0.3} ListEmptyComponent={        <Text style={styles.empty}>Aucun véhicule dans la flotte.</Text>} ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />} />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('VehicleForm', {})}>
         <MaterialIcons name="add" size={28} color={theme.colors.onPrimary} />
@@ -95,11 +84,6 @@ export default function VehiclesScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   list: { padding: theme.spacing.md, paddingBottom: 96 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.md, marginBottom: theme.spacing.sm },
-  filterPill: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: theme.borderRadius.full, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surfaceContainerLowest },
-  filterPillActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  filterText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
-  filterTextActive: { color: theme.colors.onPrimary },
   footerLoader: { marginVertical: theme.spacing.md },
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
