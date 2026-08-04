@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import api from '../api';
 import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import DateField from '../components/DateField';
+import { resolveMediaUrl } from '../apiUrl';
 
 export default function VehicleFormScreen({ route, navigation }) {
   const vehicleId = route.params?.id;
@@ -19,6 +21,26 @@ export default function VehicleFormScreen({ route, navigation }) {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [imageAsset, setImageAsset] = useState(null);
+  const [existingImage, setExistingImage] = useState(null);
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission requise', "Autorisez l'accès à la galerie pour choisir une photo.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setImageAsset(result.assets[0]);
+      setExistingImage(null);
+    }
+  };
 
   useEffect(() => {
     api.get('brands/').then(r => setBrands(r.data.results || r.data || [])).catch(() => {});
@@ -34,6 +56,7 @@ export default function VehicleFormScreen({ route, navigation }) {
           date_assurance: v.date_assurance || '', date_visite_technique: v.date_visite_technique || '',
           prochain_vidange_km: String(v.prochain_vidange_km || ''), tarif_km_extra: String(v.tarif_km_extra || ''),
         });
+        if (v.image) setExistingImage(v.image);
         if (v.marque) api.get(`modelcars/?brand=${v.marque}`).then(r => setModels(r.data.results || r.data || [])).catch(() => {});
       }).catch(() => Alert.alert('Erreur', 'Impossible de charger le véhicule')).finally(() => setLoading(false));
     }
@@ -64,8 +87,20 @@ export default function VehicleFormScreen({ route, navigation }) {
         prochain_vidange_km: parseInt(form.prochain_vidange_km) || null,
         tarif_km_extra: form.tarif_km_extra ? parseFloat(form.tarif_km_extra) : null,
       };
-      if (isEdit) await api.patch(`vehicles/${vehicleId}/`, payload);
-      else await api.post('vehicles/', payload);
+      if (imageAsset) {
+        const data = new FormData();
+        Object.keys(payload).forEach(k => data.append(k, payload[k]));
+        data.append('image', {
+          uri: imageAsset.uri,
+          name: imageAsset.fileName || `photo_${Date.now()}.jpg`,
+          type: imageAsset.mimeType || 'image/jpeg',
+        });
+        if (isEdit) await api.patch(`vehicles/${vehicleId}/`, data);
+        else await api.post('vehicles/', data);
+      } else {
+        if (isEdit) await api.patch(`vehicles/${vehicleId}/`, payload);
+        else await api.post('vehicles/', payload);
+      }
       navigation.goBack();
     } catch (e) {
       Alert.alert('Erreur', e.response?.data?.detail || 'Erreur lors de la sauvegarde');
@@ -86,8 +121,27 @@ export default function VehicleFormScreen({ route, navigation }) {
 
         <View style={styles.sectionHeader}>
           <MaterialIcons name="fingerprint" size={20} color={theme.colors.onSurface} />
-          <Text style={{ fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface }}>Identification</Text>
+          <Text style={styles.sectionTitle}>Identification</Text>
         </View>
+
+        <View style={styles.sectionHeader}>
+          <MaterialIcons name="photo-camera" size={20} color={theme.colors.onSurface} />
+          <Text style={styles.sectionTitle}>Photo du véhicule</Text>
+        </View>
+        <TouchableOpacity style={styles.imagePicker} onPress={pickImage} activeOpacity={0.8}>
+          {(imageAsset?.uri || (isEdit && existingImage)) ? (
+            <Image source={{ uri: imageAsset?.uri || resolveMediaUrl(existingImage) }} style={styles.imagePreview} resizeMode="cover" />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <MaterialIcons name="add-a-photo" size={32} color={theme.colors.onSurfaceVariant} />
+              <Text style={styles.imageHint}>Ajouter une photo</Text>
+            </View>
+          )}
+          <View style={styles.imageOverlay}>
+            <Text style={styles.imageOverlayText}>{imageAsset || (isEdit && existingImage) ? 'Changer la photo' : 'Choisir une photo'}</Text>
+          </View>
+        </TouchableOpacity>
+
         <Text style={styles.label}>Matricule *</Text>
         <TextInput style={styles.input} value={form.matricule} onChangeText={v => setForm(f => ({ ...f, matricule: v }))} placeholder="Ex: 1234 Tunisia 5" placeholderTextColor={theme.colors.onSurfaceVariant} />
 
@@ -170,6 +224,32 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
   label: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.md, color: theme.colors.onSurface, marginBottom: theme.spacing.xs, marginTop: theme.spacing.md },
+  sectionTitle: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface },
+  imagePicker: {
+    width: '100%',
+    height: 180,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surfaceContainerLowest,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: theme.spacing.xs,
+  },
+  imagePreview: { width: '100%', height: 180 },
+  imagePlaceholder: { alignItems: 'center', gap: 8 },
+  imageHint: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
+  imageOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  imageOverlayText: { color: '#fff', fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.xs },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',

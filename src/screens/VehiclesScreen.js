@@ -1,5 +1,5 @@
 import { Alert, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Image } from 'react-native';
 import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
+import { resolveMediaUrl } from '../apiUrl';
 
 const statusMeta = {
   Available: { label: 'Disponible', accent: theme.colors.green600, bg: theme.colors.statusAvailable, text: theme.colors.green600, border: 'rgba(46,125,50,0.25)', icon: 'check-circle' },
@@ -44,9 +45,13 @@ export default function VehiclesScreen({ navigation }) {
         <View style={[styles.accentBar, { backgroundColor: meta.accent }]} />
         <View style={styles.cardBody}>
           <View style={styles.cardHeader}>
-            <View style={styles.avatar}>
-              <MaterialIcons name="directions-car" size={20} color={theme.colors.secondary} />
-            </View>
+            {resolveMediaUrl(item.image) ? (
+              <Image source={{ uri: resolveMediaUrl(item.image) }} style={styles.thumb} resizeMode="cover" />
+            ) : (
+              <View style={styles.avatar}>
+                <MaterialIcons name="directions-car" size={20} color={theme.colors.secondary} />
+              </View>
+            )}
             <View style={styles.cardTitleBlock}>
               <Text style={styles.matricule}>{item.matricule}</Text>
               <Text style={styles.model} numberOfLines={1}>{item.marque_nom || item.marque} {item.modele_nom || item.modele}</Text>
@@ -108,6 +113,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceContainerLow,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  thumb: {
+    width: 64,
+    height: 48,
+    borderRadius: theme.borderRadius.sm,
+    backgroundColor: theme.colors.surfaceContainerLow,
   },
   cardTitleBlock: { flex: 1, marginRight: theme.spacing.xs },
   matricule: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface },

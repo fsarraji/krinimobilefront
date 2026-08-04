@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import theme from '../theme';
-import { resolveApiUrl } from '../apiUrl';
+import { resolveApiUrl, resolveMediaUrl } from '../apiUrl';
 
-const API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL, 'https://krini-api.onrender.com/api/');
+const API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL, 'https://kriniback.onrender.com/api/');
 
 const CATEGORIES = ['All Luxury', 'SUV', 'Sedan', 'Sport', 'Economy', 'Electric'];
 
@@ -44,53 +44,60 @@ export default function MarketplaceScreen({ navigation }) {
     return list;
   }, [vehicles, search]);
 
-  const renderVehicleCard = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.imageArea}>
-        <View style={styles.imagePlaceholder}>
-          <MaterialIcons name="directions-car" size={48} color={theme.colors.outlineVariant} />
+  const renderVehicleCard = ({ item }) => {
+    const imageUri = resolveMediaUrl(item.image);
+    return (
+      <View style={styles.card}>
+        <View style={styles.imageArea}>
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={styles.vehicleImage} resizeMode="cover" />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <MaterialIcons name="directions-car" size={48} color={theme.colors.outlineVariant} />
+            </View>
+          )}
+          {item.note ? (
+            <View style={styles.ratingBadge}>
+              <MaterialIcons name="star" size={14} color={theme.colors.star} />
+              <Text style={styles.ratingText}>{item.note}</Text>
+            </View>
+          ) : null}
         </View>
-        {item.note ? (
-          <View style={styles.ratingBadge}>
-            <MaterialIcons name="star" size={14} color={theme.colors.star} />
-            <Text style={styles.ratingText}>{item.note}</Text>
+        <View style={styles.cardContent}>
+          <Text style={styles.vehicleName} numberOfLines={1}>
+            {(item.marque_nom || item.marque || '')} {(item.modele_nom || item.modele || '')}
+          </Text>
+          <Text style={styles.vehicleType}>{item.categorie || 'Standard'}</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.priceValue}>{item.prix_par_jour?.toLocaleString() || '0'} DH</Text>
+            <Text style={styles.priceUnit}>/ day</Text>
           </View>
-        ) : null}
+          <View style={styles.specsRow}>
+            <View style={styles.specItem}>
+              <MaterialIcons name="airline-seat-recline-extra" size={16} color={theme.colors.onSurfaceVariant} />
+              <Text style={styles.specText}>{item.nb_places || 5}</Text>
+            </View>
+            <View style={styles.specItem}>
+              <MaterialIcons name="settings-input-component" size={16} color={theme.colors.onSurfaceVariant} />
+              <Text style={styles.specText}>{item.transmission || 'Auto'}</Text>
+            </View>
+            <View style={styles.specItem}>
+              <MaterialIcons name={item.carburant === 'Électrique' ? 'local-gas-station' : 'speed'} size={16} color={theme.colors.onSurfaceVariant} />
+              <Text style={styles.specText}>{item.carburant || 'Essence'}</Text>
+            </View>
+          </View>
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.bookButton} activeOpacity={0.8} onPress={() => navigation.navigate('BookingForm', { vehicle: item })}>
+              <Text style={styles.bookButtonText}>Book Now</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.favoriteButton} activeOpacity={0.7}>
+              <MaterialIcons name="favorite-border" size={22} color={theme.colors.onSurfaceVariant} />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-      <View style={styles.cardContent}>
-        <Text style={styles.vehicleName} numberOfLines={1}>
-          {(item.marque_nom || item.marque || '')} {(item.modele_nom || item.modele || '')}
-        </Text>
-        <Text style={styles.vehicleType}>{item.categorie || 'Standard'}</Text>
-        <View style={styles.priceRow}>
-          <Text style={styles.priceValue}>{item.prix_par_jour?.toLocaleString() || '0'} DH</Text>
-          <Text style={styles.priceUnit}>/ day</Text>
-        </View>
-        <View style={styles.specsRow}>
-          <View style={styles.specItem}>
-            <MaterialIcons name="airline-seat-recline-extra" size={16} color={theme.colors.onSurfaceVariant} />
-            <Text style={styles.specText}>{item.nb_places || 5}</Text>
-          </View>
-          <View style={styles.specItem}>
-            <MaterialIcons name="settings-input-component" size={16} color={theme.colors.onSurfaceVariant} />
-            <Text style={styles.specText}>{item.transmission || 'Auto'}</Text>
-          </View>
-          <View style={styles.specItem}>
-            <MaterialIcons name={item.carburant === 'Électrique' ? 'local-gas-station' : 'speed'} size={16} color={theme.colors.onSurfaceVariant} />
-            <Text style={styles.specText}>{item.carburant || 'Essence'}</Text>
-          </View>
-        </View>
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.bookButton} activeOpacity={0.8} onPress={() => navigation.navigate('BookingForm', { vehicle: item })}>
-            <Text style={styles.bookButtonText}>Book Now</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.favoriteButton} activeOpacity={0.7}>
-            <MaterialIcons name="favorite-border" size={22} color={theme.colors.onSurfaceVariant} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const renderHeader = () => (
     <View>
@@ -286,6 +293,15 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  vehicleImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
   },
   imagePlaceholder: {
     justifyContent: 'center',

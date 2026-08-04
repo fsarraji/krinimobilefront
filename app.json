@@ -38,6 +38,12 @@
           "recordAudioAndroid": false
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Krini utilise vos photos pour associer une image au véhicule."
+        }
+      ],
       "@react-native-community/datetimepicker"
     ],
     "extra": {
