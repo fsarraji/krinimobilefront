@@ -3,8 +3,9 @@ import { View, Text, FlatList, TextInput, StyleSheet, ActivityIndicator, ScrollV
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import theme from '../theme';
+import { resolveApiUrl } from '../apiUrl';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://krini-api.onrender.com/api/';
+const API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL, 'https://krini-api.onrender.com/api/');
 
 const CATEGORIES = ['All Luxury', 'SUV', 'Sedan', 'Sport', 'Economy', 'Electric'];
 

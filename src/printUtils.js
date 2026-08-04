@@ -3,8 +3,9 @@ import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
 import api from './api';
+import { resolveApiUrl } from './apiUrl';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://kriniback.onrender.com/api/';
+const API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL, 'https://kriniback.onrender.com/api/');
 
 const POLL_INTERVAL_MS = 1500;
 const MAX_POLL_ATTEMPTS = 120; // ~3 minutes

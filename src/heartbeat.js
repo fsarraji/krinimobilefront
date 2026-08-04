@@ -1,6 +1,7 @@
 import { AppState } from 'react-native';
+import { resolveApiUrl } from './apiUrl';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://kriniback.onrender.com/api/';
+const API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL, 'https://kriniback.onrender.com/api/');
 const PING_INTERVAL = 10 * 60 * 1000;
 
 let timer = null;

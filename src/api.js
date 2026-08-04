@@ -1,8 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from 'jwt-decode';
+import { resolveApiUrl } from './apiUrl';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://kriniback.onrender.com/api/';
+const API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL, 'https://kriniback.onrender.com/api/');
 
 const api = axios.create({
   baseURL: API_URL,
