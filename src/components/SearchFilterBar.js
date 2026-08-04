@@ -41,7 +41,7 @@ export default function SearchFilterBar({ placeholder, search, onSearchChange, o
               onPress={() => setOpen((o) => !o)}
               activeOpacity={0.7}
             >
-              <View style={[styles.dot, { backgroundColor: (current && current.dotColor) || theme.colors.primary }]} />
+              <MaterialIcons name="filter-list" size={20} color={theme.colors.onSurfaceVariant} />
               <Text style={styles.filterLabel} numberOfLines={1}>
                 {(current && current.label) || 'Tous'}
               </Text>

@@ -132,7 +132,7 @@ function TabBar({ state, navigation }) {
           return (
             <TouchableOpacity key={route.key} onPress={() => handlePress(route, isFocused)} style={tabBarStyles.moreSlot} activeOpacity={0.85}>
               <View style={[tabBarStyles.moreButton, moreActive && tabBarStyles.moreButtonActive]}>
-                <MaterialIcons name="apps" size={26} color="#fff" />
+                <MaterialIcons name="grid-view" size={26} color="#fff" />
               </View>
               <Text style={[tabBarStyles.label, moreActive && tabBarStyles.labelActive]}>Plus</Text>
             </TouchableOpacity>
@@ -186,15 +186,15 @@ const headerStyles = StyleSheet.create({
     elevation: 4,
   },
   left: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoBox: { width: 32, height: 32, backgroundColor: theme.colors.primary, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: theme.fonts.headlineBold, fontSize: 20, color: theme.colors.primary, letterSpacing: -0.5 },
+  logoBox: { width: 40, height: 40, backgroundColor: theme.colors.secondary, borderRadius: theme.borderRadius.md, alignItems: 'center', justifyContent: 'center', ...theme.shadow.card },
+  title: { fontFamily: theme.fonts.headlineBold, fontSize: 20, color: theme.colors.onSurface, letterSpacing: -0.5 },
   right: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   link: { marginRight: 4, paddingHorizontal: 6, paddingVertical: 4 },
-  linkText: { fontFamily: theme.fonts.bodySemibold, fontSize: 12, color: theme.colors.primary },
+  linkText: { fontFamily: theme.fonts.bodySemibold, fontSize: 12, color: theme.colors.secondary },
   iconBtn: { position: 'relative', padding: 4 },
   badge: { position: 'absolute', top: 3, right: 3, width: 8, height: 8, borderRadius: 4, backgroundColor: theme.colors.error },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(197, 197, 211, 0.15)' },
-  avatarText: { fontFamily: theme.fonts.bodySemibold, fontSize: 14, color: theme.colors.onSurfaceVariant },
+  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.surfaceContainerHigh, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontFamily: theme.fonts.bodyBold, fontSize: 15, color: theme.colors.onSurface },
   overlay: { position: 'absolute', top: -80, right: -90, left: -300, bottom: -1000, backgroundColor: 'transparent' },
   menu: {
     position: 'absolute',
@@ -251,18 +251,18 @@ const tabBarStyles = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
   moreSlot: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 2 },
   moreButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: theme.colors.primary,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -24,
+    marginTop: -26,
     borderWidth: 4,
     borderColor: theme.colors.background,
     ...theme.shadow.editorial,
   },
-  moreButtonActive: { backgroundColor: theme.colors.primaryContainer },
+  moreButtonActive: { backgroundColor: theme.colors.secondaryContainer },
   label: { fontFamily: 'Manrope_700Bold', fontSize: 10, color: theme.colors.navInactive, letterSpacing: -0.2, textAlign: 'center' },
   labelActive: { color: theme.colors.primary },
 });

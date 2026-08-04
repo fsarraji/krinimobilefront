@@ -45,12 +45,26 @@ export default function ExpensesScreen() {
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{item.title}</Text>
-        <Text style={styles.cardAmount}>-{parseFloat(item.amount).toLocaleString()} DH</Text>
+      <View style={styles.cardRow}>
+        <View style={styles.avatar}>
+          <MaterialIcons name="receipt-long" size={20} color={theme.colors.secondary} />
+        </View>
+        <View style={styles.cardInfo}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+            <Text style={styles.cardAmount}>-{parseFloat(item.amount).toLocaleString()} DH</Text>
+          </View>
+          <View style={styles.cardMetaRow}>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.cardCategory}>{item.category}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <MaterialIcons name="calendar-today" size={14} color={theme.colors.onSurfaceVariant} />
+              <Text style={styles.cardDate}>{item.expense_date}</Text>
+            </View>
+          </View>
+        </View>
       </View>
-      <Text style={styles.cardCategory}>{item.category}</Text>
-      <Text style={styles.cardDate}>{item.expense_date}</Text>
     </View>
   );
 
@@ -135,7 +149,7 @@ export default function ExpensesScreen() {
             ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />}
           />
           <TouchableOpacity style={styles.fab} onPress={() => setShowForm(true)}>
-            <MaterialIcons name="add" size={28} color={theme.colors.onPrimary} />
+            <MaterialIcons name="add" size={28} color={theme.colors.onSecondary} />
           </TouchableOpacity>
         </>
       )}
@@ -150,17 +164,36 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,
     ...theme.shadow.card,
-    borderWidth: 1,
-    borderColor: 'rgba(197,197,211,0.1)',
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.xs },
-  cardTitle: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.md, color: theme.colors.onSurface, flex: 1 },
+  cardRow: { flexDirection: 'row', alignItems: 'center' },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surfaceContainerLow,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing.md,
+  },
+  cardInfo: { flex: 1 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.xs },
+  cardTitle: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.md, color: theme.colors.onSurface, flex: 1, marginRight: theme.spacing.sm },
   cardAmount: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.error },
-  cardCategory: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginTop: 2 },
-  cardDate: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.xs, color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.xs },
+  cardMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  categoryBadge: {
+    backgroundColor: theme.colors.primaryLight,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  cardCategory: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.xs, color: theme.colors.secondary },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  cardDate: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.xs, color: theme.colors.onSurfaceVariant },
   formContainer: { flex: 1 },
   formContent: { padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
   inputLabel: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurface, marginBottom: theme.spacing.xs, marginTop: theme.spacing.sm },
@@ -194,10 +227,9 @@ const styles = StyleSheet.create({
   saveText: { fontFamily: theme.fonts.bodySemibold, color: theme.colors.onPrimary, fontSize: theme.fontSize.md },
   fab: {
     position: 'absolute', bottom: 24, right: 24,
-    backgroundColor: theme.colors.primary, width: 56, height: 56,
+    backgroundColor: theme.colors.secondary, width: 56, height: 56,
     borderRadius: theme.borderRadius.xl, justifyContent: 'center', alignItems: 'center',
     ...theme.shadow.card,
   },
-  fabText: { fontSize: 28, color: theme.colors.onPrimary, marginTop: -2 },
   empty: { fontFamily: theme.fonts.body, textAlign: 'center', color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.xl, fontSize: theme.fontSize.md },
 });

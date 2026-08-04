@@ -11,10 +11,19 @@ import { usePaginatedList } from '../hooks/usePaginatedList';
 import { Alert } from '../utils/alert';
 import { confirmDialog } from '../utils/confirm';
 
+const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
+function formatDateFr(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso).slice(0, 10);
+  return `${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 const REQUEST_STATUS_META = {
-  PENDING: { label: 'En attente', color: theme.colors.warning },
-  CONFIRMED: { label: 'Confirmée', color: theme.colors.success },
-  CANCELLED: { label: 'Annulée', color: theme.colors.error },
+  PENDING: { label: 'En attente', color: theme.colors.warning, icon: 'hourglass-top', accent: theme.colors.warning, bg: '#fff8e1', border: '#fde68a' },
+  CONFIRMED: { label: 'Confirmée', color: theme.colors.success, icon: 'check-circle', accent: theme.colors.green600, bg: theme.colors.statusAvailable, border: 'rgba(46,125,50,0.25)' },
+  CANCELLED: { label: 'Annulée', color: theme.colors.error, icon: 'cancel', accent: theme.colors.error, bg: theme.colors.errorContainer, border: theme.colors.red200 },
 };
 
 const requestOptions = [
@@ -112,59 +121,69 @@ export default function ReservationsScreen({ navigation }) {
     const busy = updating === item.id;
     return (
       <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.clientName}>{item.client_name}</Text>
-            <Text style={styles.vehicleText}>{item.vehicle_name}</Text>
+        <View style={[styles.accentBar, { backgroundColor: meta.accent }]} />
+        <View style={styles.cardBody}>
+          <View style={styles.cardHeader}>
+            <View style={styles.avatar}>
+              <MaterialIcons name="person" size={20} color={theme.colors.secondary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.clientName} numberOfLines={1}>{item.client_name}</Text>
+              <Text style={styles.vehicleText} numberOfLines={1}>{item.vehicle_name}</Text>
+            </View>
+            <View style={[styles.statusBadge, { backgroundColor: meta.bg, borderColor: meta.border }]}>
+              <MaterialIcons name={meta.icon} size={14} color={meta.color} />
+              <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
+            </View>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: `${meta.color}22` }]}>
-            <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
+          <View style={styles.dateRow}>
+            <MaterialIcons name="calendar-today" size={16} color={theme.colors.onSurfaceVariant} />
+            <Text style={styles.dateValue}>{formatDateFr(item.date_sortie)}  →  {formatDateFr(item.date_retour_prevue)}</Text>
           </View>
+          {item.statut === 'PENDING' && (
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.rejectButton} onPress={() => handleRefuse(item)} disabled={busy}>
+                <Text style={styles.rejectText}>{busy ? '...' : 'Refuser'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.activateButton} onPress={() => handleConfirm(item)} disabled={busy}>
+                <Text style={styles.activateText}>{busy ? '...' : 'Confirmer'}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-        <View style={styles.dateRow}>
-          <Text style={styles.dateLabel}>Du</Text>
-          <Text style={styles.dateValue}>{item.date_sortie?.slice(0, 10)}</Text>
-          <Text style={styles.dateLabel}>au</Text>
-          <Text style={styles.dateValue}>{item.date_retour_prevue?.slice(0, 10)}</Text>
-        </View>
-        {item.statut === 'PENDING' && (
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.rejectButton} onPress={() => handleRefuse(item)} disabled={busy}>
-              <Text style={styles.rejectText}>{busy ? '...' : 'Refuser'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.activateButton} onPress={() => handleConfirm(item)} disabled={busy}>
-              <Text style={styles.activateText}>{busy ? '...' : 'Confirmer'}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
     );
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.clientName}>{item.client_nom || item.client}</Text>
-          <Text style={styles.vehicleText}>{item.vehicule_matricule || item.vehicule}</Text>
+      <View style={[styles.accentBar, { backgroundColor: theme.colors.secondary }]} />
+      <View style={styles.cardBody}>
+        <View style={styles.cardHeader}>
+          <View style={styles.avatar}>
+            <MaterialIcons name="person" size={20} color={theme.colors.secondary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.clientName} numberOfLines={1}>{item.client_nom || item.client}</Text>
+            <Text style={styles.vehicleText} numberOfLines={1}>{item.vehicule_matricule || item.vehicule}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: theme.colors.primaryLight, borderColor: 'rgba(4,83,205,0.25)' }]}>
+            <MaterialIcons name="event" size={14} color={theme.colors.secondary} />
+            <Text style={[styles.statusText, { color: theme.colors.secondary }]}>Réservation</Text>
+          </View>
         </View>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>Réservation</Text>
+        <View style={styles.dateRow}>
+          <MaterialIcons name="calendar-today" size={16} color={theme.colors.onSurfaceVariant} />
+          <Text style={styles.dateValue}>{formatDateFr(item.date_sortie)}  →  {formatDateFr(item.date_retour_prevue)}</Text>
         </View>
-      </View>
-      <View style={styles.dateRow}>
-        <Text style={styles.dateLabel}>Du</Text>
-        <Text style={styles.dateValue}>{item.date_sortie?.slice(0, 10)}</Text>
-        <Text style={styles.dateLabel}>au</Text>
-        <Text style={styles.dateValue}>{item.date_retour_prevue?.slice(0, 10)}</Text>
-      </View>
-      <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.receiptButton} onPress={() => handlePrint(item.id)} disabled={printingId !== null}>
-          <Text style={styles.receiptButtonText}>{printingId === item.id ? 'Génération...' : 'Reçu'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.activateButton} onPress={() => handleActivate(item)} disabled={activating === item.id}>
-          <Text style={styles.activateText}>{activating === item.id ? '...' : 'Activer'}</Text>
-        </TouchableOpacity>
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.receiptButton} onPress={() => handlePrint(item.id)} disabled={printingId !== null}>
+            <Text style={styles.receiptButtonText}>{printingId === item.id ? 'Génération...' : 'Reçu'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.activateButton} onPress={() => handleActivate(item)} disabled={activating === item.id}>
+            <Text style={styles.activateText}>{activating === item.id ? '...' : 'Activer'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -203,7 +222,7 @@ export default function ReservationsScreen({ navigation }) {
         ListFooterComponent={<PaginationFooter page={page} totalPages={totalPages} total={total} loading={loadingMore} onPrev={() => goToPage(page - 1)} onNext={() => goToPage(page + 1)} />}
       />
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('ReservationForm', {})}>
-        <MaterialIcons name="add" size={28} color={theme.colors.onPrimary} />
+        <MaterialIcons name="add" size={28} color={theme.colors.onSecondary} />
       </TouchableOpacity>
       {printingId !== null && (
         <View style={styles.overlay}>
@@ -238,41 +257,61 @@ const styles = StyleSheet.create({
   list: { padding: theme.spacing.md, paddingBottom: 96 },
   footerLoader: { marginVertical: theme.spacing.md },
   card: {
+    position: 'relative',
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
+    overflow: 'hidden',
+    padding: 0,
     marginBottom: theme.spacing.md,
     ...theme.shadow.card,
-    borderWidth: 1,
-    borderColor: 'rgba(197,197,211,0.1)',
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.md },
+  accentBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 6 },
+  cardBody: { padding: theme.spacing.md, paddingLeft: theme.spacing.md + 8 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, marginBottom: theme.spacing.md },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surfaceContainerLow,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   clientName: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.md, color: theme.colors.onSurface },
-  vehicleText: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginTop: 2 },
-  statusBadge: { backgroundColor: theme.colors.primaryLight, paddingHorizontal: 12, paddingVertical: 4, borderRadius: theme.borderRadius.full, alignSelf: 'flex-start' },
-  statusText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.xs, color: theme.colors.primary },
-  dateRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, marginBottom: theme.spacing.md },
-  dateLabel: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.xs, color: theme.colors.onSurfaceVariant },
-  dateValue: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurface },
-  actionRow: { flexDirection: 'row', gap: theme.spacing.md },
+  vehicleText: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginTop: 1 },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  statusText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.xs },
+  dateRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, marginBottom: theme.spacing.md },
+  dateValue: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSurface, flex: 1 },
+  actionRow: { flexDirection: 'row', gap: theme.spacing.sm },
   receiptButton: {
     flex: 1,
-    backgroundColor: theme.colors.primaryLight,
+    backgroundColor: theme.colors.errorContainer,
     borderRadius: theme.borderRadius.sm,
     padding: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderColor: 'rgba(186,26,26,0.15)',
   },
-  receiptButtonText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.primary },
+  receiptButtonText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.error },
   activateButton: {
     flex: 1,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.secondary,
     borderRadius: theme.borderRadius.sm,
     padding: 10,
     alignItems: 'center',
   },
-  activateText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onPrimary },
+  activateText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.onSecondary },
   rejectButton: {
     flex: 1,
     backgroundColor: theme.colors.errorContainer,
@@ -285,10 +324,9 @@ const styles = StyleSheet.create({
   rejectText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.sm, color: theme.colors.error },
   fab: {
     position: 'absolute', bottom: 24, right: 24,
-    backgroundColor: theme.colors.primary, width: 56, height: 56,
+    backgroundColor: theme.colors.secondary, width: 56, height: 56,
     borderRadius: theme.borderRadius.xl, justifyContent: 'center', alignItems: 'center',
     ...theme.shadow.card,
   },
-  fabText: { fontSize: 28, color: theme.colors.onPrimary, marginTop: -2 },
   empty: { textAlign: 'center', color: theme.colors.onSurfaceVariant, marginTop: theme.spacing.xl, fontFamily: theme.fonts.body, fontSize: theme.fontSize.md },
 });
