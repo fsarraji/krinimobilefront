@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import axios from 'axios';
 import theme from '../theme';
 import { resolveApiUrl, resolveMediaUrl } from '../apiUrl';
+import SafeImage from '../components/SafeImage';
 
 const API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL, 'https://kriniback.onrender.com/api/');
 
@@ -50,7 +51,7 @@ export default function MarketplaceScreen({ navigation }) {
       <View style={styles.card}>
         <View style={styles.imageArea}>
           {imageUri ? (
-            <Image source={{ uri: imageUri }} style={styles.vehicleImage} resizeMode="cover" />
+            <SafeImage uri={imageUri} style={styles.vehicleImage} iconSize={48} iconColor={theme.colors.outlineVariant} />
           ) : (
             <View style={styles.imagePlaceholder}>
               <MaterialIcons name="directions-car" size={48} color={theme.colors.outlineVariant} />

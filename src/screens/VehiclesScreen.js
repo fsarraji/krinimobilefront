@@ -1,5 +1,6 @@
 import { Alert, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import SafeImage from '../components/SafeImage';
 import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
@@ -46,7 +47,7 @@ export default function VehiclesScreen({ navigation }) {
         <View style={styles.cardBody}>
           <View style={styles.cardHeader}>
             {resolveMediaUrl(item.image) ? (
-              <Image source={{ uri: resolveMediaUrl(item.image) }} style={styles.thumb} resizeMode="cover" />
+              <SafeImage uri={resolveMediaUrl(item.image)} style={styles.thumb} />
             ) : (
               <View style={styles.avatar}>
                 <MaterialIcons name="directions-car" size={20} color={theme.colors.secondary} />

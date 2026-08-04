@@ -5,6 +5,7 @@ import api from '../api';
 import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import DateField from '../components/DateField';
+import SafeImage from '../components/SafeImage';
 import { resolveMediaUrl } from '../apiUrl';
 
 function Label({ required, children }) {
@@ -206,7 +207,11 @@ export default function VehicleFormScreen({ route, navigation }) {
           <SectionTitle icon="photo-camera">Photo du véhicule</SectionTitle>
           <TouchableOpacity style={styles.imagePicker} onPress={pickImage} activeOpacity={0.8}>
             {(imageAsset?.uri || (isEdit && existingImage)) ? (
-              <Image source={{ uri: imageAsset?.uri || resolveMediaUrl(existingImage) }} style={styles.imagePreview} resizeMode="cover" />
+              imageAsset?.uri ? (
+                <Image source={{ uri: imageAsset.uri }} style={styles.imagePreview} resizeMode="cover" />
+              ) : (
+                <SafeImage uri={resolveMediaUrl(existingImage)} style={styles.imagePreview} iconSize={32} iconColor={theme.colors.onSurfaceVariant} />
+              )
             ) : (
               <View style={styles.imagePlaceholder}>
                 <MaterialIcons name="add-a-photo" size={32} color={theme.colors.onSurfaceVariant} />
