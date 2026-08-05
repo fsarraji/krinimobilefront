@@ -18,6 +18,8 @@ export default function SettingsScreen({ navigation }) {
     km_par_jour: '250',
     km_tarif_extra_defaut: '1.50',
   });
+  const [allBrands, setAllBrands] = useState([]);
+  const [selectedBrands, setSelectedBrands] = useState([]);
 
   useEffect(() => {
     api.get('agency/settings/').then(r => {
@@ -29,8 +31,19 @@ export default function SettingsScreen({ navigation }) {
         km_par_jour: String(d.km_par_jour || '250'),
         km_tarif_extra_defaut: String(d.km_tarif_extra_defaut || '1.50'),
       });
-    }).catch(() => {}).finally(() => setLoading(false));
+      setSelectedBrands((d.brands || []).map(String));
+    }).catch(() => {});
+    api.get('brands/', { params: { all: 1 } })
+      .then(r => setAllBrands(r.data.results || r.data || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
+
+  const toggleBrand = (id) => {
+    setSelectedBrands(prev =>
+      prev.includes(String(id)) ? prev.filter(x => x !== String(id)) : [...prev, String(id)]
+    );
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -41,6 +54,7 @@ export default function SettingsScreen({ navigation }) {
         km_extra_active: form.km_extra_active,
         km_par_jour: parseInt(form.km_par_jour) || 0,
         km_tarif_extra_defaut: parseFloat(form.km_tarif_extra_defaut) || 0,
+        brands: selectedBrands.map(Number),
       });
       Alert.alert('Succès', 'Paramètres mis à jour');
     } catch (e) {
@@ -125,6 +139,34 @@ export default function SettingsScreen({ navigation }) {
 
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
+            <MaterialIcons name="directions-car" size={20} color={theme.colors.primary} />
+            <Text style={styles.sectionTitle}>Marques affichées</Text>
+          </View>
+        <Text style={styles.brandHint}>Sélectionnez les marques à afficher dans les formulaires de véhicule. Aucune sélection = toutes les marques.</Text>
+        {allBrands.length === 0 ? (
+          <Text style={styles.emptyBrands}>Aucune marque disponible.</Text>
+        ) : (
+          <View style={styles.brandGrid}>
+            {allBrands.map(b => {
+              const isChecked = selectedBrands.includes(String(b.id));
+              return (
+                <TouchableOpacity
+                  key={b.id}
+                  style={[styles.brandChip, isChecked && styles.brandChipActive]}
+                  onPress={() => canEdit && toggleBrand(b.id)}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons name={isChecked ? 'check-box' : 'check-box-outline-blank'} size={18} color={isChecked ? theme.colors.primary : theme.colors.outline} />
+                  <Text style={[styles.brandChipText, isChecked && styles.brandChipTextActive]} numberOfLines={1}>{b.name}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.sectionHeader}>
           <MaterialIcons name="verified" size={20} color={theme.colors.primary} />
           <Text style={styles.sectionTitle}>Branding</Text>
         </View>
@@ -179,4 +221,22 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontFamily: theme.fonts.headlineBold, fontSize: theme.fontSize.lg, color: theme.colors.onSurface },
   saveText: { fontFamily: theme.fonts.bodySemibold, color: theme.colors.onPrimary, fontSize: theme.fontSize.md },
+  brandHint: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginBottom: theme.spacing.md },
+  emptyBrands: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, textAlign: 'center', paddingVertical: theme.spacing.md },
+  brandGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
+  brandChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.full,
+    borderWidth: 1,
+    borderColor: theme.colors.outlineVariant,
+    backgroundColor: theme.colors.surfaceContainerLowest,
+    maxWidth: '100%',
+  },
+  brandChipActive: { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary },
+  brandChipText: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, maxWidth: 180 },
+  brandChipTextActive: { color: theme.colors.primary, fontFamily: theme.fonts.bodySemibold },
 });
