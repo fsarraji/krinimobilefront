@@ -5,6 +5,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import api from '../api';
 import theme from '../theme';
 import { useAuth } from '../context/AuthContext';
+import Select2 from '../components/Select2';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(280, SCREEN_WIDTH * 0.7);
@@ -165,37 +166,30 @@ export default function ContractFormScreen({ navigation }) {
               <Text style={styles.badgeText}>{availableVehicles.length} disponibles</Text>
             </View>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
-            {availableVehicles.length === 0 && (
-              <Text style={styles.emptyText}>No vehicles available</Text>
+          <Select2
+            icon="directions-car"
+            label="Véhicule"
+            placeholder="Sélectionner un véhicule disponible"
+            value={selectedVehicle?.id}
+            options={availableVehicles.map(v => ({
+              value: String(v.id),
+              label: `${v.nom || v.matricule}`,
+              subtitle: `${v.matricule} · ${v.carburant || ''}`,
+              price: v.prix_par_jour,
+            }))}
+            onSelect={(id) => setSelectedVehicle(availableVehicles.find(v => v.id == id))}
+            searchable
+            renderOption={(o) => (
+              <View style={{ flex: 1 }}>
+                <Text style={styles.optionLabel} numberOfLines={1}>{o.label}</Text>
+                <Text style={styles.optionSub} numberOfLines={1}>{o.subtitle}</Text>
+                <Text style={styles.optionPrice}>{o.price} DH/j</Text>
+              </View>
             )}
-            {availableVehicles.map(v => {
-              const isSelected = selectedVehicle?.id === v.id;
-              return (
-                <TouchableOpacity
-                  key={v.id}
-                  style={[styles.vehicleCard, isSelected && styles.vehicleCardSelected]}
-                  onPress={() => setSelectedVehicle(v)}
-                  activeOpacity={0.85}
-                >
-                  <View style={styles.cardImageWrap}>
-                    <MaterialIcons name="directions-car" size={40} color={theme.colors.outline} />
-                    <View style={styles.classBadge}>
-                      <Text style={styles.classBadgeText}>{v.categorie || 'Standard'}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.cardBody}>
-                    <Text style={styles.vehicleName} numberOfLines={1}>{v.nom || v.matricule}</Text>
-                    <View style={styles.vehicleMeta}>
-                      <Text style={styles.vehiclePlate}>{v.matricule}</Text>
-                      <Text style={styles.vehicleFuel}>{v.carburant}</Text>
-                    </View>
-                    <Text style={styles.vehiclePrice}>{v.prix_par_jour} DH/j</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          />
+          {availableVehicles.length === 0 && (
+            <Text style={styles.emptyText}>No vehicles available</Text>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -205,47 +199,19 @@ export default function ContractFormScreen({ navigation }) {
               <Text style={styles.sectionTitle}>Informations Client</Text>
             </View>
           </View>
-          <View style={styles.searchWrap}>
-            <MaterialIcons name="search" size={18} color={theme.colors.outline} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Rechercher par nom ou téléphone..."
-              placeholderTextColor={theme.colors.outline}
-              value={clientSearch}
-              onChangeText={setClientSearch}
-            />
-          </View>
-          {filteredClients.length === 0 ? (
-            <Text style={styles.emptyText}>Aucun client trouvé</Text>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.clientRow}>
-              {filteredClients.map(c => {
-                const isSelected = selectedClient?.id === c.id;
-                const fullName = `${c.prenom || ''} ${c.nom || ''}`.trim();
-                return (
-                  <TouchableOpacity
-                    key={c.id}
-                    style={[styles.clientCard, isSelected && styles.clientCardSelected]}
-                    onPress={() => { setSelectedClient(c); setClientSearch(''); }}
-                    activeOpacity={0.85}
-                  >
-                    <View style={[styles.clientAvatar, isSelected && styles.clientAvatarSelected]}>
-                      <Text style={[styles.clientAvatarText, isSelected && styles.clientAvatarTextSelected]}>
-                        {getInitials(fullName)}
-                      </Text>
-                    </View>
-                    <View style={styles.clientInfo}>
-                      <Text style={styles.clientName} numberOfLines={1}>{fullName}</Text>
-                      <Text style={styles.clientLicense}>{c.permis || 'N/A'}</Text>
-                    </View>
-                    {isSelected && (
-                      <Text style={{ fontSize: 22 }}>✅</Text>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          )}
+          <Select2
+            icon="person"
+            label="Client"
+            placeholder="Rechercher un client..."
+            value={selectedClient?.id}
+            options={clients.map(c => ({
+              value: String(c.id),
+              label: `${c.prenom || ''} ${c.nom || ''}`.trim() || 'Client',
+              subtitle: c.permis || 'N/A',
+            }))}
+            onSelect={(id) => { setSelectedClient(clients.find(c => c.id == id)); setClientSearch(''); }}
+            searchable
+          />
         </View>
 
         <View style={styles.section}>
@@ -571,6 +537,9 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
     paddingVertical: 20,
   },
+  optionLabel: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.md, color: theme.colors.onSurface },
+  optionSub: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant, marginTop: 2 },
+  optionPrice: { fontFamily: theme.fonts.bodyBold, fontSize: theme.fontSize.sm, color: theme.colors.primary, marginTop: 4 },
   dateRow: {
     flexDirection: 'row',
     gap: 12,

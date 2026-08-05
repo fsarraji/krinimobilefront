@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, RefreshControl, ScrollView, Switch } from 'react-native';
 import api from '../api';
 import theme from '../theme';
+import Select2 from '../components/Select2';
 import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import { usePaginatedList } from '../hooks/usePaginatedList';
@@ -118,9 +119,26 @@ export default function UserManagementScreen() {
         <TextInput style={styles.input} placeholder="Nom" placeholderTextColor={theme.colors.onSurfaceVariant} value={form.last_name} onChangeText={v => setForm(f => ({ ...f, last_name: v }))} />
         <TextInput style={styles.input} placeholder={editing ? "Mot de passe (laisser vide pour ne pas changer)" : "Mot de passe *"} placeholderTextColor={theme.colors.onSurfaceVariant} value={form.password} onChangeText={v => setForm(f => ({ ...f, password: v }))} secureTextEntry />
         <Text style={styles.label}>Rôle</Text>
-        {renderChips(['OWNER', 'EMPLOYEE', 'SUPERADMIN'], form.role, null, (v) => setForm(f => ({ ...f, role: v })))}
+        <Select2
+          value={form.role}
+          options={[
+            { value: 'OWNER', label: 'Propriétaire Agence' },
+            { value: 'EMPLOYEE', label: 'Employé' },
+            { value: 'SUPERADMIN', label: 'Super Admin' },
+          ]}
+          onSelect={(v) => setForm(f => ({ ...f, role: v }))}
+          searchable
+        />
         <Text style={styles.label}>Agence</Text>
-        {renderChips(agencies, form.agency, 'nom_agence', (v) => setForm(f => ({ ...f, agency: v })))}
+        <Select2
+          value={form.agency || ''}
+          options={[
+            { value: '', label: '-- Aucune (Super Admin) --' },
+            ...agencies.map(a => ({ value: String(a.id), label: a.nom_agence })),
+          ]}
+          onSelect={(v) => setForm(f => ({ ...f, agency: v || '' }))}
+          searchable
+        />
         <View style={styles.card}>
           <View style={styles.switchRow}>
             <Text style={styles.switchLabel}>Actif</Text>

@@ -5,6 +5,7 @@ import axios from 'axios';
 import theme from '../theme';
 import { resolveApiUrl, resolveMediaUrl } from '../apiUrl';
 import SafeImage from '../components/SafeImage';
+import Select2 from '../components/Select2';
 
 const API_URL = resolveApiUrl(process.env.EXPO_PUBLIC_API_URL, 'https://kriniback.onrender.com/api/');
 
@@ -129,20 +130,16 @@ export default function MarketplaceScreen({ navigation }) {
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoriesContainer}>
-        {CATEGORIES.map(cat => (
-          <TouchableOpacity
-            key={cat}
-            style={[styles.categoryPill, selectedCategory === cat && styles.categoryPillActive]}
-            onPress={() => setSelectedCategory(cat)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.categoryPillText, selectedCategory === cat && styles.categoryPillTextActive]}>
-              {cat}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.categorySelect}>
+        <Select2
+          label="Catégorie"
+          value={selectedCategory}
+          options={CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
+          onSelect={setSelectedCategory}
+          searchable
+          fieldStyle={styles.categoryField}
+        />
+      </View>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Available Fleet</Text>
@@ -242,6 +239,12 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
   },
+  categorySelect: {
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
+  },
+  categoryField: { backgroundColor: theme.colors.surfaceContainerLowest },
   categoryPill: {
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,

@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert,
 import api from '../api';
 import theme from '../theme';
 import DateTimeField from '../components/DateTimeField';
+import Select2 from '../components/Select2';
 
 export default function ReservationFormScreen({ navigation }) {
   const [step, setStep] = useState(1);
@@ -92,13 +93,18 @@ export default function ReservationFormScreen({ navigation }) {
         <>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sélectionner un véhicule</Text>
-            <View style={styles.chipRow}>
-              {vehicles.filter(v => v.statut === 'Available').map(v => (
-                <TouchableOpacity key={v.id} style={[styles.chip, form.vehicle == v.id && styles.chipSelected]} onPress={() => setForm(f => ({ ...f, vehicle: v.id, prix_par_jour: String(v.prix_par_jour) }))}>
-                  <Text style={[styles.chipText, form.vehicle == v.id && styles.chipTextSelected]}>{v.matricule} - {v.prix_par_jour} DH/j</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Select2
+              value={form.vehicle}
+              options={vehicles.filter(v => v.statut === 'Available').map(v => ({
+                value: String(v.id),
+                label: `${v.matricule} - ${v.prix_par_jour} DH/j`,
+              }))}
+              onSelect={(id) => {
+                const v = vehicles.find(x => x.id == id);
+                setForm(f => ({ ...f, vehicle: v.id, prix_par_jour: String(v.prix_par_jour) }));
+              }}
+              searchable
+            />
           </View>
           <TouchableOpacity style={styles.primaryButton} onPress={() => setStep(3)}>
             <Text style={styles.primaryButtonText}>Suivant</Text>
@@ -110,13 +116,15 @@ export default function ReservationFormScreen({ navigation }) {
         <>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sélectionner un client</Text>
-            <View style={styles.chipRow}>
-              {clients.map(c => (
-                <TouchableOpacity key={c.id} style={[styles.chip, form.client == c.id && styles.chipSelected]} onPress={() => setForm(f => ({ ...f, client: c.id }))}>
-                  <Text style={[styles.chipText, form.client == c.id && styles.chipTextSelected]}>{c.prenom} {c.nom} - {c.telephone}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Select2
+              value={form.client}
+              options={clients.map(c => ({
+                value: String(c.id),
+                label: `${c.prenom} ${c.nom} - ${c.telephone}`,
+              }))}
+              onSelect={(id) => setForm(f => ({ ...f, client: id }))}
+              searchable
+            />
           </View>
 
           <View style={styles.card}>

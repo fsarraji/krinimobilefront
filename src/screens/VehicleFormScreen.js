@@ -6,6 +6,7 @@ import theme from '../theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import DateField from '../components/DateField';
 import SafeImage from '../components/SafeImage';
+import Select2 from '../components/Select2';
 import { resolveMediaUrl } from '../apiUrl';
 
 function Label({ required, children }) {
@@ -29,34 +30,6 @@ function IconInput({ icon, ...props }) {
         onBlur={() => setFocused(false)}
         {...props}
       />
-    </View>
-  );
-}
-
-function SelectField({ icon, placeholder, value, options, onSelect }) {
-  const [open, setOpen] = useState(false);
-  const selected = options.find((o) => String(o.value) === String(value));
-  return (
-    <View>
-      <TouchableOpacity style={styles.selectBox} onPress={() => setOpen((o) => !o)} activeOpacity={0.8}>
-        <MaterialIcons name={icon} size={18} color={theme.colors.outline} />
-        <Text style={[styles.selectValue, !selected && styles.selectPlaceholder]} numberOfLines={1}>
-          {selected ? selected.label : placeholder}
-        </Text>
-        <MaterialIcons name="expand-more" size={20} color={theme.colors.outline} />
-      </TouchableOpacity>
-      {open && (
-        <View style={styles.optionsRow}>
-          {options.map((o) => (
-            <TouchableChoice
-              key={String(o.value)}
-              label={o.label}
-              selected={String(value) === String(o.value)}
-              onPress={() => { onSelect(o.value); setOpen(false); }}
-            />
-          ))}
-        </View>
-      )}
     </View>
   );
 }
@@ -231,11 +204,11 @@ export default function VehicleFormScreen({ route, navigation }) {
             </View>
             <View style={styles.field}>
               <Label required>Marque</Label>
-              <SelectField icon="directions-car" placeholder="Sélectionner la marque" value={form.marque} options={brands.map(b => ({ value: b.id, label: b.name }))} onSelect={handleBrandChange} />
+              <Select2 icon="directions-car" placeholder="Sélectionner la marque" value={form.marque} options={brands.map(b => ({ value: String(b.id), label: b.name }))} onSelect={handleBrandChange} searchable />
             </View>
             <View style={styles.field}>
               <Label required>Modèle</Label>
-              <SelectField icon="directions-car" placeholder="Sélectionner le modèle" value={form.modele} options={models.map(m => ({ value: m.id, label: m.name }))} onSelect={(v) => setForm(f => ({ ...f, modele: v }))} />
+              <Select2 icon="directions-car" placeholder="Sélectionner le modèle" value={form.modele} options={models.map(m => ({ value: String(m.id), label: m.name }))} onSelect={(v) => setForm(f => ({ ...f, modele: v }))} disabled={!form.marque} searchable />
             </View>
             <View style={styles.fieldRow}>
               <View style={styles.fieldHalf}>
@@ -257,7 +230,7 @@ export default function VehicleFormScreen({ route, navigation }) {
             </View>
             <View style={styles.field}>
               <Label>Type de carburant</Label>
-              <SelectField icon="local-gas-station" placeholder="Sélectionner le type" value={form.carburant} options={['Diesel', 'Essence', 'Hybride', 'Électrique'].map(c => ({ value: c, label: c }))} onSelect={(v) => setForm(f => ({ ...f, carburant: v }))} />
+              <Select2 icon="local-gas-station" placeholder="Sélectionner le type" value={form.carburant} options={['Diesel', 'Essence', 'Hybride', 'Électrique'].map(c => ({ value: c, label: c }))} onSelect={(v) => setForm(f => ({ ...f, carburant: v }))} searchable />
             </View>
             <View style={styles.fieldRow}>
               <View style={styles.fieldHalf}>
@@ -279,7 +252,7 @@ export default function VehicleFormScreen({ route, navigation }) {
             </View>
             <View style={styles.field}>
               <Label>Statut</Label>
-              <SelectField icon="task-alt" placeholder="Sélectionner le statut" value={form.statut} options={[{ value: 'Available', label: 'Disponible' }, { value: 'Rented', label: 'Loué' }, { value: 'Maintenance', label: 'Maintenance' }]} onSelect={(v) => setForm(f => ({ ...f, statut: v }))} />
+              <Select2 icon="task-alt" placeholder="Sélectionner le statut" value={form.statut} options={[{ value: 'Available', label: 'Disponible' }, { value: 'Rented', label: 'Loué' }, { value: 'Maintenance', label: 'Maintenance' }]} onSelect={(v) => setForm(f => ({ ...f, statut: v }))} searchable />
             </View>
           </View>
 
@@ -307,14 +280,6 @@ export default function VehicleFormScreen({ route, navigation }) {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-function TouchableChoice({ label, selected, onPress }) {
-  return (
-    <TouchableOpacity onPress={onPress} style={[styles.choice, selected && styles.choiceSelected]}>
-      <Text style={[styles.choiceText, selected && styles.choiceTextSelected]}>{label}</Text>
-    </TouchableOpacity>
   );
 }
 
@@ -358,31 +323,6 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
     color: theme.colors.onSurface,
   },
-  selectBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.outlineVariant,
-    borderRadius: theme.borderRadius.sm,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 12,
-    backgroundColor: 'transparent',
-  },
-  selectValue: { flex: 1, fontSize: theme.fontSize.md, fontFamily: theme.fonts.body, color: theme.colors.onSurface },
-  selectPlaceholder: { color: theme.colors.onSurfaceVariant },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, marginTop: theme.spacing.sm },
-  choice: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: theme.colors.outlineVariant,
-    backgroundColor: theme.colors.surfaceContainerLowest,
-  },
-  choiceSelected: { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.secondary },
-  choiceText: { fontFamily: theme.fonts.body, fontSize: theme.fontSize.sm, color: theme.colors.onSurfaceVariant },
-  choiceTextSelected: { color: theme.colors.secondary, fontFamily: theme.fonts.bodySemibold },
   imagePicker: {
     width: '100%',
     height: 180,

@@ -4,6 +4,7 @@ import api from '../api';
 import theme from '../theme';
 import FuelGaugeSelector from '../components/FuelGaugeSelector';
 import DateField from '../components/DateField';
+import Select2 from '../components/Select2';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const accessories = [
@@ -135,13 +136,13 @@ export default function CloseContractScreen({ route, navigation }) {
           <Text style={styles.cardTitle}>Paiement final</Text>
         </View>
         <TextInput style={styles.input} placeholder="Montant (DH)" placeholderTextColor={theme.colors.onSurfaceVariant} value={form.payment_amount} onChangeText={v => setForm(f => ({ ...f, payment_amount: v }))} keyboardType="numeric" />
-        <View style={styles.chipRow}>
-          {['Espèce', 'Chèque', 'Virement', 'TPE'].map(m => (
-            <TouchableOpacity key={m} style={[styles.chip, form.payment_method === m && styles.chipSelected]} onPress={() => setForm(f => ({ ...f, payment_method: m }))}>
-              <Text style={[styles.chipText, form.payment_method === m && styles.chipTextSelected]}>{m}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Select2
+          label="Méthode de paiement"
+          value={form.payment_method}
+          options={['Espèce', 'Chèque', 'Virement', 'TPE'].map(m => ({ value: m, label: m }))}
+          onSelect={(m) => setForm(f => ({ ...f, payment_method: m }))}
+          searchable
+        />
       </View>
 
       <TouchableOpacity style={styles.primaryButton} onPress={handleClose} disabled={saving}>

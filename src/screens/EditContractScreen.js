@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import api from '../api';
+import Select2 from '../components/Select2';
 import theme from '../theme';
 import { printContract } from '../printUtils';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -106,13 +107,18 @@ export default function EditContractScreen({ route, navigation }) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Statut du Contrat</Text>
-        <View style={styles.chipRow}>
-          {['RESERVE', 'EN_COURS', 'TERMINE', 'ANNULE'].map(s => (
-            <TouchableOpacity key={s} style={[styles.chip, contract.statut === s && styles.chipSelected]} onPress={() => handleStatusChange(s)} disabled={savingStatus}>
-              <Text style={[styles.chipText, contract.statut === s && styles.chipTextSelected]}>{s === 'EN_COURS' ? 'En cours' : s.charAt(0) + s.slice(1).toLowerCase()}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Select2
+          value={contract.statut}
+          options={[
+            { value: 'RESERVE', label: 'Réservé' },
+            { value: 'EN_COURS', label: 'En cours' },
+            { value: 'TERMINE', label: 'Terminé' },
+            { value: 'ANNULE', label: 'Annulé' },
+          ]}
+          onSelect={handleStatusChange}
+          disabled={savingStatus}
+          searchable
+        />
       </View>
 
       <View style={styles.section}>
@@ -122,13 +128,13 @@ export default function EditContractScreen({ route, navigation }) {
         </View>
         <TextInput style={styles.input} placeholder="Montant (DH)" placeholderTextColor={theme.colors.onSurfaceVariant} value={payment.amount} onChangeText={v => setPayment(p => ({ ...p, amount: v }))} keyboardType="numeric" />
         <TextInput style={styles.input} placeholder="Référence (optionnel)" placeholderTextColor={theme.colors.onSurfaceVariant} value={payment.reference} onChangeText={v => setPayment(p => ({ ...p, reference: v }))} />
-        <View style={styles.chipRow}>
-          {['Espèce', 'Chèque', 'Virement', 'TPE'].map(m => (
-            <TouchableOpacity key={m} style={[styles.chip, payment.payment_method === m && styles.chipSelected]} onPress={() => setPayment(p => ({ ...p, payment_method: m }))}>
-              <Text style={[styles.chipText, payment.payment_method === m && styles.chipTextSelected]}>{m}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Select2
+          label="Méthode de paiement"
+          value={payment.payment_method}
+          options={['Espèce', 'Chèque', 'Virement', 'TPE'].map(m => ({ value: m, label: m }))}
+          onSelect={(m) => setPayment(p => ({ ...p, payment_method: m }))}
+          searchable
+        />
         <TouchableOpacity style={styles.primaryButton} onPress={handleAddPayment} disabled={savingPayment}>
           {savingPayment ? <ActivityIndicator color={theme.colors.onPrimary} /> : <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><MaterialIcons name="save" size={16} color={theme.colors.onPrimary} /><Text style={styles.primaryButtonText}>Ajouter le paiement</Text></View>}
         </TouchableOpacity>

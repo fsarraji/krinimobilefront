@@ -4,6 +4,7 @@ import api from '../api';
 import { MaterialIcons } from '@expo/vector-icons';
 import theme from '../theme';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Select2 from '../components/Select2';
 import SearchFilterBar from '../components/SearchFilterBar';
 import PaginationFooter from '../components/PaginationFooter';
 import DateField from '../components/DateField';
@@ -84,17 +85,12 @@ export default function ExpensesScreen() {
           />
 
           <Text style={styles.inputLabel}>Catégorie</Text>
-          <View style={styles.chipsRow}>
-            {categories.map(c => (
-              <TouchableOpacity
-                key={c}
-                style={[styles.chip, form.category === c && styles.chipSelected]}
-                onPress={() => setForm(f => ({ ...f, category: c }))}
-              >
-                <Text style={[styles.chipText, form.category === c && styles.chipTextSelected]}>{c}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <Select2
+            value={form.category}
+            options={categories.map(c => ({ value: c, label: c }))}
+            onSelect={(v) => setForm(f => ({ ...f, category: v }))}
+            searchable
+          />
 
           <Text style={styles.inputLabel}>Montant (DH)</Text>
           <TextInput
