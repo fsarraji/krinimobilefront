@@ -10,8 +10,9 @@ export default function ClientRegisterScreen({ navigation, route }) {
   const { login } = useAuth();
   const [form, setForm] = useState({
     nom: '', prenom: '', telephone: '', email: '',
-    cin_passport: '', date_expiration_cin: '', nationalite: '',
+    cin_passport: '', date_expiration_cin: '', nationalite: '', sexe: '',
     permis_conduite: '', date_delivrance_permis: '', adresse: '',
+    ville: '', pays: '',
     password: '', password2: '',
   });
   const [scans, setScans] = useState({ cin: null, permis: null });
@@ -97,6 +98,20 @@ export default function ClientRegisterScreen({ navigation, route }) {
             <TextInput style={styles.input} value={form.nationalite} onChangeText={set('nationalite')} placeholder="Marocaine" placeholderTextColor={theme.colors.onSurfaceVariant} />
           </View>
         </View>
+        <Text style={styles.label}>Sexe</Text>
+        <View style={styles.row}>
+          {['HOMME', 'FEMME'].map(s => (
+            <TouchableOpacity
+              key={s}
+              style={[styles.sexeOption, form.sexe === s && styles.sexeOptionActive]}
+              onPress={() => set('sexe')(s)}
+            >
+              <Text style={[styles.sexeText, form.sexe === s && styles.sexeTextActive]}>
+                {s === 'HOMME' ? 'Homme' : 'Femme'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text style={styles.label}>Numéro du permis *</Text>
         <TextInput style={styles.input} value={form.permis_conduite} onChangeText={set('permis_conduite')} placeholder="Numéro de permis" placeholderTextColor={theme.colors.onSurfaceVariant} />
@@ -104,6 +119,16 @@ export default function ClientRegisterScreen({ navigation, route }) {
 
         <Text style={styles.label}>Adresse *</Text>
         <TextInput style={[styles.input, styles.textArea]} value={form.adresse} onChangeText={set('adresse')} multiline numberOfLines={3} placeholder="Adresse complète" placeholderTextColor={theme.colors.onSurfaceVariant} />
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Ville</Text>
+            <TextInput style={styles.input} value={form.ville} onChangeText={set('ville')} placeholder="Casablanca" placeholderTextColor={theme.colors.onSurfaceVariant} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Pays</Text>
+            <TextInput style={styles.input} value={form.pays} onChangeText={set('pays')} placeholder="Maroc" placeholderTextColor={theme.colors.onSurfaceVariant} />
+          </View>
+        </View>
 
         <Text style={styles.sectionLabel}>SCANS DES DOCUMENTS (optionnel)</Text>
         <ScanCard
@@ -195,6 +220,18 @@ const styles = StyleSheet.create({
   dateValue: { fontSize: theme.fontSize.md, color: theme.colors.onSurface },
   datePlaceholder: { color: theme.colors.onSurfaceVariant },
   row: { flexDirection: 'row', gap: theme.spacing.sm },
+  sexeOption: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: theme.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#dadce0',
+    backgroundColor: theme.colors.surfaceContainerLowest,
+    alignItems: 'center',
+  },
+  sexeOptionActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryContainer || '#e8def8' },
+  sexeText: { fontFamily: theme.fonts.bodySemibold, fontSize: theme.fontSize.md, color: theme.colors.onSurfaceVariant },
+  sexeTextActive: { color: theme.colors.primary },
   scanCard: {
     backgroundColor: theme.colors.surfaceContainerLowest,
     borderRadius: theme.borderRadius.md,

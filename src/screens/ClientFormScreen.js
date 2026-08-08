@@ -10,7 +10,8 @@ export default function ClientFormScreen({ route, navigation }) {
 
   const [form, setForm] = useState({
     nom: '', prenom: '', telephone: '', email: '', cin_passport: '',
-    permis_conduite: '', nationalite: '', adresse: '',
+    permis_conduite: '', nationalite: '', sexe: '', adresse: '',
+    ville: '', pays: '',
     liste_noire: false, remarques: '',
   });
   const [scans, setScans] = useState({ cin: null, permis: null });
@@ -28,7 +29,8 @@ export default function ClientFormScreen({ route, navigation }) {
           nom: c.nom || '', prenom: c.prenom || '', telephone: c.telephone || '', email: c.email || '',
           cin_passport: c.cin_passport || '',
           permis_conduite: c.permis_conduite || '',
-          nationalite: c.nationalite || '', adresse: c.adresse || '',
+          nationalite: c.nationalite || '', sexe: c.sexe || '', adresse: c.adresse || '',
+          ville: c.ville || '', pays: c.pays || '',
           liste_noire: c.liste_noire || false, remarques: c.remarques || '',
         });
         setExistingScans({ cin: c.scan_cin || null, permis: c.scan_permis || null });
@@ -133,8 +135,29 @@ export default function ClientFormScreen({ route, navigation }) {
           onRemove={() => removeScan('permis')}
         />
 
+        <Text style={styles.label}>Sexe</Text>
+        <View style={styles.sexeRow}>
+          {['HOMME', 'FEMME'].map(s => (
+            <TouchableOpacity
+              key={s}
+              style={[styles.sexeOption, form.sexe === s && styles.sexeOptionActive]}
+              onPress={() => setForm(f => ({ ...f, sexe: s }))}
+            >
+              <Text style={[styles.sexeText, form.sexe === s && styles.sexeTextActive]}>
+                {s === 'HOMME' ? 'Homme' : 'Femme'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <Text style={styles.label}>Nationalité</Text>
         <TextInput style={styles.input} value={form.nationalite} onChangeText={v => setForm(f => ({ ...f, nationalite: v }))} placeholder="Marocaine" placeholderTextColor={theme.colors.onSurfaceVariant} />
+
+        <Text style={styles.label}>Ville</Text>
+        <TextInput style={styles.input} value={form.ville} onChangeText={v => setForm(f => ({ ...f, ville: v }))} placeholder="Casablanca" placeholderTextColor={theme.colors.onSurfaceVariant} />
+
+        <Text style={styles.label}>Pays</Text>
+        <TextInput style={styles.input} value={form.pays} onChangeText={v => setForm(f => ({ ...f, pays: v }))} placeholder="Maroc" placeholderTextColor={theme.colors.onSurfaceVariant} />
 
         <Text style={styles.label}>Adresse Résidentielle</Text>
         <TextInput style={[styles.input, styles.textArea]} value={form.adresse} onChangeText={v => setForm(f => ({ ...f, adresse: v }))} multiline numberOfLines={3} placeholder="Adresse complète" placeholderTextColor={theme.colors.onSurfaceVariant} />
